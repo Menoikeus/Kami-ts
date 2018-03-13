@@ -57,3 +57,10 @@ typings/
 # dotenv environment variables file
 .env
 
+# build files
+dist/
+
+# config EXCEPT
+*.json
+!package.json
+!tsconfig.json
