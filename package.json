@@ -1,0 +1,35 @@
+{
+  "name": "kami-ts",
+  "version": "1.0.0",
+  "description": "League Discord bot",
+  "main": "kami.js",
+  "scripts": {
+    "dev": "tsc-watch --onSuccess \"node ./dist/kami.js\"",
+    "test": "mocha --recursive -r ts-node/register ./tests/**/*.spec.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Menoikeus/Kami-ts.git"
+  },
+  "author": "Menoikeus",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Menoikeus/Kami-ts/issues"
+  },
+  "homepage": "https://github.com/Menoikeus/Kami-ts#readme",
+  "dependencies": {
+    "@types/mongodb": "^3.0.7",
+    "@types/node": "^9.4.7",
+    "discord.js": "^11.3.2",
+    "discord.js-commando": "^0.9.0",
+    "tsc-watch": "^1.0.16",
+    "typescript": "^2.7.2"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.1.2",
+    "@types/mocha": "^2.2.48",
+    "chai": "^4.1.2",
+    "mocha": "^5.0.4",
+    "ts-node": "^5.0.1"
+  }
+}
