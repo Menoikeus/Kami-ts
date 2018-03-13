@@ -7,6 +7,11 @@ export interface Command {
   run (client: Client, message: Message, args: string[]): void;
 }
 
+export interface CommandList {
+  commands: Command[];
+}
+
+/** The command handling class, to handle incoming commands */
 export class CommandHandler {
   client: Client;
   commands: Tree<String, Command>;
@@ -15,6 +20,12 @@ export class CommandHandler {
     this.client = client;
     this.commands = new Tree<String, Command>();
   };
+
+  public addCommands(commandList: CommandList) {
+    commandList.commands.forEach((command: Command) => {
+      this.addCommand(command);
+    });
+  }
 
   /** Method to add a command to the handler */
   public addCommand(command: Command): CommandHandler {
@@ -33,16 +44,21 @@ export class CommandHandler {
 
   /** Given a full command, find the appropriate command object and run its
       method on the given arguments and flags */
-  public findAndRun(message: Message): boolean {
-    if((message.content.match(/\"/g) || []).length % 2 !== 0) {
+  public findAndRun(message: Message, prefix: string): boolean {
+    // Get rid of the command prefix
+    let regex: RegExp = new RegExp("^" + prefix);
+    let content: string = message.content.replace(regex, "");
+
+    // Check for mismatched quotes
+    if((content.match(/\"/g) || []).length % 2 !== 0) {
       throw new Error("Mismatched quotes!");
     }
 
     // Split the command string on spaces after triming and getting rid of
     // double spaces
-    let constituents: string[] = message.content.trim()
-                                                .replace(/ +/g, " ")
-                                                .split(" ");
+    let constituents: string[] = content.trim()
+                                        .replace(/ +/g, " ")
+                                        .split(" ");
 
     // Go through the command tree to find the appropriate command
     let targetCommand: Command = this.commands.traverse(constituents);
@@ -58,12 +74,12 @@ export class CommandHandler {
 
       // Remove what was use to call the command from the full message, then
       // split the message
-      let fieldString = message.content.replace(regex, "").trim();
-      let fields: string[] = fieldString.split(" +(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+      let fieldString = content.replace(regex, "").trim();
+      let fields: string[] = fieldString.split(/ +(?=([^\"]*\"[^\"]*\")*[^\"]*$)/);
 
       // Remove quotes
       let args: string[] = [];
-      fields.forEach((str: string) => { args.push(str.replace(/\"/g, "")); });
+      fields.forEach((str: string) => { if(str) args.push(str.replace(/\"/g, "")); });
 
       // Finally, run the method
       targetCommand.run(this.client, message, args);

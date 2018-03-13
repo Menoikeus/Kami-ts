@@ -40,7 +40,7 @@ describe('Command tests', () => {
     commandHandler.addCommand(command);
 
     // Find and run
-    expect(commandHandler.findAndRun({ content: "inhouse join" } as any)).to.be.true;
+    expect(commandHandler.findAndRun({ content: "!inhouse join" } as any, "!")).to.be.true;
   });
 
   it('Command handler with nonexistent command', () => {
@@ -49,7 +49,7 @@ describe('Command tests', () => {
     commandHandler.addCommand(command);
 
     // Find and run
-    expect(commandHandler.findAndRun({ content: "house join" } as any)).to.be.false;
+    expect(commandHandler.findAndRun({ content: "!house join" } as any, "!")).to.be.false;
   });
 
   it('Command handler with command with args', () => {
@@ -66,7 +66,24 @@ describe('Command tests', () => {
     commandHandler.addCommand(command);
 
     // Find and run
-    expect(commandHandler.findAndRun({ content: "inhouse join #1523" } as any)).to.be.true;
+    expect(commandHandler.findAndRun({ content: "!inhouse join #1523" } as any, "!")).to.be.true;
+  });
+
+  it('Command handler with command with multiple args', () => {
+    // Create command with args
+    let command: Command = {
+      caller: ["inhouse", "join"],
+      run (client: Client, message: Message, args: string[]): void {
+        expect(args[1]).to.be.equal("#1523");
+      }
+    };
+
+    // Create command handler and add command
+    let commandHandler: CommandHandler = new CommandHandler(new Client());
+    commandHandler.addCommand(command);
+
+    // Find and run
+    expect(commandHandler.findAndRun({ content: "!inhouse join mingo #1523 de" } as any, "!")).to.be.true;
   });
 
   it('Command handler with command with quoted args', () => {
@@ -83,7 +100,7 @@ describe('Command tests', () => {
     commandHandler.addCommand(command);
 
     // Find and run
-    expect(commandHandler.findAndRun({ content: "inhouse join \"John Pikeman's lobby\"" } as any)).to.be.true;
+    expect(commandHandler.findAndRun({ content: "!inhouse join \"John Pikeman's lobby\"" } as any, "!")).to.be.true;
   });
 
   it('Command handler with command with mismatched quotes', () => {
@@ -100,7 +117,7 @@ describe('Command tests', () => {
     commandHandler.addCommand(command);
 
     // Find and run
-    expect(commandHandler.findAndRun.bind(commandHandler, { content: "inhouse join \"John Pikeman's\" lobby\"" } as any)).to.throw();
+    expect(commandHandler.findAndRun.bind(commandHandler, { content: "!inhouse join \"John Pikeman's\" lobby\"" } as any, "!")).to.throw();
   });
 
   it('Command handler with command with weird spacing', () => {
@@ -109,6 +126,6 @@ describe('Command tests', () => {
     commandHandler.addCommand(command);
 
     // Find and run
-    expect(commandHandler.findAndRun({ content: "inhouse    join  " } as any)).to.be.true;
+    expect(commandHandler.findAndRun({ content: "!inhouse    join  " } as any, "!")).to.be.true;
   });
 });
