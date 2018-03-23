@@ -3,15 +3,18 @@ import { MongoClient, Collection } from "mongodb";
 export class MongoDatabaseProvider {
   static db: MongoClient;
 
-  constructor(user: string, password: string, databaseUrl: string) {
+  public static connectToDatabase(user: string, password: string, databaseUrl: string): Promise<MongoClient> {
     const uri = "mongodb://" + user + ":" + password + "@" + databaseUrl;
 
-    MongoClient.connect(uri, function(error, client) {
-      if(error) {
-        throw new Error("Database connection failed");
-      }
-      MongoDatabaseProvider.db = client;
-      console.log("Database connection established!");
+    MongoDatabaseProvider.close();
+    return new Promise((resolve, reject) => {
+      MongoClient.connect(uri, function(error, client) {
+        if(error) {
+          reject(new Error("Database connection failed"));
+        }
+        MongoDatabaseProvider.db = client;
+        resolve(MongoDatabaseProvider.db);
+      });
     });
   }
 
@@ -20,5 +23,14 @@ export class MongoDatabaseProvider {
       throw new Error("No connection has been established with any database yet!");
     }
     return this.db;
+  }
+
+  public static close(): void {
+    try {
+      this.db.close();
+    }
+    catch(error) {
+
+    }
   }
 }

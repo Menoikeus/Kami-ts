@@ -2,9 +2,14 @@ import Tree from "../data_structures/Tree";
 import { Message, Client } from "discord.js";
 
 /** An interface representing a command */
-export interface Command {
+export abstract class Command {
   caller: string[];
-  run (client: Client, message: Message, args: string[]): void;
+
+  constructor(caller: string[]) {
+    this.caller = caller;
+  }
+
+  abstract async run (client: Client, message: Message, args: string[]);
 }
 
 export interface CommandList {
@@ -44,7 +49,7 @@ export class CommandHandler {
 
   /** Given a full command, find the appropriate command object and run its
       method on the given arguments and flags */
-  public findAndRun(message: Message, prefix: string): boolean {
+  public async findAndRun(message: Message, prefix: string) {
     // Get rid of the command prefix
     let regex: RegExp = new RegExp("^" + prefix);
     let content: string = message.content.replace(regex, "");
@@ -57,33 +62,23 @@ export class CommandHandler {
     // Split the command string on spaces after triming and getting rid of
     // double spaces
     let constituents: string[] = content.trim()
-                                        .replace(/ +/g, " ")
-                                        .split(" ");
+                                        .split(/("[^"]+"|[^"\s]+)/g)
+                                        .filter((val) => val.trim());
 
     // Go through the command tree to find the appropriate command
-    let targetCommand: Command = this.commands.traverse(constituents);
+    let targetCommand: Command = this.commands.traverse(constituents.slice());
 
-    // If it isn't there, return false. If it is...
-    if(targetCommand === undefined) {
-      return false;
-    }
-    else {
-      // Regex to match the beginning of the message, which includes what was
-      // used to call the command
-      let regex: RegExp = new RegExp("^" + targetCommand.caller.join(" "));
+    // If it it's there, run the command
+    if(targetCommand !== undefined) {
+      // Get the caller
+      let caller: string[] = targetCommand.caller;
 
-      // Remove what was use to call the command from the full message, then
-      // split the message
-      let fieldString = content.replace(regex, "").trim();
-      let fields: string[] = fieldString.split(/ +(?=([^\"]*\"[^\"]*\")*[^\"]*$)/);
-
-      // Remove quotes
+      // Get rid of the strings used to call the function, and remove quotes
       let args: string[] = [];
-      fields.forEach((str: string) => { if(str) args.push(str.replace(/\"/g, "")); });
+      constituents.slice(caller.length).forEach((str: string) => { if(str) args.push(str.replace(/\"/g, "")); });
 
-      // Finally, run the method
-      targetCommand.run(this.client, message, args);
-      return true;
+      // Finally, run the method, and catch bubbled errors
+      await targetCommand.run(this.client, message, args);
     }
   }
 }
