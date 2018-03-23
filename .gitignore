@@ -64,3 +64,4 @@ dist/
 *.json
 !package.json
 !tsconfig.json
+!nodemon.json
