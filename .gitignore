@@ -60,6 +60,9 @@ typings/
 # build files
 dist/
 
+# test database
+data/test/
+
 # config EXCEPT
 *.json
 !package.json
