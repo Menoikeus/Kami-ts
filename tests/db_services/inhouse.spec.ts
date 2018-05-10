@@ -2,7 +2,7 @@ import InhouseService from '../../src/services/InhouseService';
 import { MongoDatabaseProvider } from '../../src/services/MongoDBService';
 import { expect } from 'chai';
 import 'mocha';
-const mongodb_config = require('../../dist/config/mongodb/mongo_config.json');
+const mongodb_config = require('../config/mongo_config.json');
 
 describe('Profile service tests', () => {
   // Connect to database

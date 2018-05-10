@@ -1,6 +1,6 @@
 import { Command, CommandHandler } from '../../src/services/CommandService';
 import { Client, Message, TextChannel, Guild } from "discord.js";
-const mongodb_config = require('../../dist/config/mongodb/mongo_config.json');
+const mongodb_config = require('../config/mongo_config.json');
 import { expect } from 'chai';
 import 'mocha';
 
