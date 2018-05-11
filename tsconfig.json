@@ -3,11 +3,12 @@
     "module": "commonjs",
     "target": "es2018",
     "outDir": "./dist/",
-    "rootDir": "./src/"
+    "rootDir": "./src/",
+    "lib": ["ES2015"]
   },
   "exclude": [
-    "./tests/"
-  ],
+      "./tests/"
+    ],
   "atom": {
     "rewriteTsconfig": false
   }

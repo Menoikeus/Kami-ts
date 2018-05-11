@@ -1,10 +1,14 @@
-import { Client, Message } from 'discord.js';
+import { Client, Message, Guild, GuildMember } from 'discord.js';
 import { CommandHandler } from './services/CommandService';
 import AllCommands from './commands/AllCommands';
 import { MongoDatabaseProvider } from './services/MongoDBService';
 import { MongoClient } from 'mongodb';
-const config = require('./config/global_config.json');
-const mongodb_config = require('./config/mongodb/mongo_config.json');
+import GuildService from './services/GuildService';
+import ProfileService from './services/ProfileService';
+import InfoService from './services/InfoService';
+
+const config = require('../config/global_config.json');
+const mongodb_config = require('../config/mongodb/mongo_config.json');
 const path = require('path');
 
 export class Bot {
@@ -25,9 +29,11 @@ export class Bot {
 
     // Setup the database, then setup commands, then login with the token
     this.setupDatabase().then(() => {
+      this.client.login(token);
+    }).then(() => {
       this.setupCommands();
     }).then(() => {
-      this.client.login(token);
+      setTimeout(() => this.setupGuilds(), 2000);
     });
   }
 
@@ -40,21 +46,30 @@ export class Bot {
 
     console.log("Commands added!");
     // On each message, check to see if it's a command. If so, find and run the command
+    let db: MongoClient = MongoDatabaseProvider.getDatabase();
     this.client.on('message', async (message: Message) => {
       if(message.author.bot) return;
-      let db: MongoClient = MongoDatabaseProvider.getDatabase();
 
       // Get the prefix for the server
-      const directoryInfo = await db.db(message.guild.id).collection("info").findOne({ info_type: "directory_info" });
+      const directoryInfo = await InfoService.getDirectoryInfo(message.guild.id);
       const server_prefix: string = directoryInfo.s_prefix;
 
       if(!message.content.startsWith(server_prefix)) return;
       // Run the command, and catch errors
 
       this.commandHandler.findAndRun(message, server_prefix).catch((error) => {
-        console.log("CAUGHT");
         message.channel.send(error.message);
       });
     });
+  }
+
+  private setupGuilds(): void {
+    console.log("Adding guilds");
+    this.client.guilds.forEach((guild: Guild) => {
+      GuildService.addGuildToDatabase(guild);
+    });
+
+    this.client.on("guildCreate", (guild: Guild) => GuildService.addGuildToDatabase(guild));
+    this.client.on("guildMemberAdd", (member: GuildMember) => ProfileService.createProfileInServer(member.user.id, member.guild.id));
   }
 }

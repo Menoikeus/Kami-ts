@@ -1,5 +1,5 @@
 import Tree from "../data_structures/Tree";
-import { Message, Client } from "discord.js";
+import { Message, Client, User, GuildMember, Guild } from "discord.js";
 import { MongoClient, Collection } from 'mongodb';
 import { MongoDatabaseProvider } from './MongoDBService';
 
@@ -27,5 +27,19 @@ export default class ProfileService {
     let db: MongoClient = MongoDatabaseProvider.getDatabase();
 
     return db.db(guildid).collection("users");
+  }
+
+  public static async createProfileInServer(userid: string, guildid: string) {
+    let userObj = {
+      "userid"		: userid,
+  		"level"			: 0,
+  		"exp"				: 0
+    }
+
+    let existingUser = await ProfileService.getUserProfileById(userid, guildid);
+    if(!existingUser) {
+      await ProfileService.getUserCollection(guildid).insertOne(userObj);
+      console.log("New user " + userid + " added to guild " + guildid);
+    }
   }
 }
