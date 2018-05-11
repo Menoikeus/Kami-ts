@@ -1,11 +1,11 @@
 const LeagueJS = require('leaguejs');
-const lolapi_config = require('../config/lolapi/config_lolapi.json');
+const lolapi_config = require('../../config/lolapi/config_lolapi.json');
 
 export default class RiotApiService {
   static lolapi = new LeagueJS(lolapi_config.apiKey);
 
   public static async getSummonerByName(name: string) {
-    try{
+    try {
       return await RiotApiService.lolapi.Summoner.gettingByName(name);
     }
     catch(error) {
