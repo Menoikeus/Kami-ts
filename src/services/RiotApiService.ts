@@ -1,5 +1,6 @@
 const LeagueJS = require('leaguejs');
 const lolapi_config = require('../../config/lolapi/config_lolapi.json');
+import InhouseService from './InhouseService';
 
 export default class RiotApiService {
   static lolapi = new LeagueJS(lolapi_config.apiKey);
@@ -13,7 +14,7 @@ export default class RiotApiService {
     }
   }
 
-  public static catchSummonerError(error) {
+  private static catchSummonerError(error) {
     switch(error.statusCode) {
       case 400: console.log("lolapi error " + error.statusCode + ": Bad Request");
         throw new Error("I don't know why, but something broke.");
@@ -21,6 +22,44 @@ export default class RiotApiService {
           throw new Error("Looks like the api key currently isn't working. Please tell the dev.");
       case 404: console.log("lolapi error " + error.statusCode + ": Summoner not found");
         throw new Error("That summoner name does not exist!");
+      case 429: console.log("lolapi error " + error.statusCode + ": Too many requests");
+        throw new Error("There's been too many requests! Please try again in a moment.");
+      case 500:
+      case 502:
+      case 503:
+      case 504:
+        console.log("lolapi error " + error.statusCode + ": Server unreachable");
+        throw new Error("Riot's servers seem to be unreachable right now.");
+      default:
+        console.log(error);
+        throw new Error("Unexpected error");
+    }
+  }
+
+  public static async getCurrentGameByUserId(userid: string, guildid: string) {
+    const profile = await InhouseService.getInhouseProfileByDiscordId(userid, guildid);
+    if(!profile) throw new Error("You're not in the league! Use '!inhouse add $USERNAME' to add your summoner!");
+
+    return await RiotApiService.getCurrentGameByLeagueId(profile.leagueid);
+  }
+
+  public static async getCurrentGameByLeagueId(leagueid: string) {
+    try {
+      return await RiotApiService.lolapi.Spectator.gettingActiveGame(leagueid);
+    }
+    catch(error) {
+      RiotApiService.catchMatchError(error);
+    }
+  }
+
+  private static catchMatchError(error) {
+    switch(error.statusCode) {
+      case 400: console.log("lolapi error " + error.statusCode + ": Bad Request");
+        throw new Error("I don't know why, but something broke.");
+      case 403: console.log("lolapi error " + error.statusCode + ": Forbidden");
+          throw new Error("Looks like the api key currently isn't working. Please tell the dev.");
+      case 404: console.log("lolapi error " + error.statusCode + ": Match not found");
+        throw new Error("You're not in a game right now!");
       case 429: console.log("lolapi error " + error.statusCode + ": Too many requests");
         throw new Error("There's been too many requests! Please try again in a moment.");
       case 500:

@@ -99,4 +99,17 @@ export default class InhouseService {
     await InhouseService.getInhouseProfileCollection(guildid).insertOne(info);
     return info;
   }
+
+  /** Gets all the inhouse players who are currently in this game */
+  public static async getAllInhousePlayersInGame(game, guildid: string): Promise<Array<Object>> {
+    let participantIds = [];
+    game.participants.forEach((participant) => { participantIds.push(participant.summonerid); });
+    const query = {
+      leagueid: {
+        $in: participantIds
+      }
+    };
+
+    return await InhouseService.getInhouseProfilesBy(query, guildid);
+  }
 }

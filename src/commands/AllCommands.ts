@@ -3,6 +3,7 @@ import { GenerateTeam, GenerateRankedTeam, RollDice } from './GeneralCommands';
 import { GetProfile } from './inhouse/ProfileCommands';
 import { GetLeague } from './inhouse/LeagueCommands';
 import { AddSummoner } from './inhouse/InhouseCommands';
+import { StartGame } from './inhouse/game/GameCommands';
 
 
 export default class AllCommands implements CommandList {
@@ -16,5 +17,6 @@ export default class AllCommands implements CommandList {
     this.commands.push(new GenerateRankedTeam());
     this.commands.push(new RollDice());
     this.commands.push(new AddSummoner());
+    this.commands.push(new StartGame());
   }
 };
