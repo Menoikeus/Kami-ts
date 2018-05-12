@@ -1,10 +1,14 @@
 import InhouseService from '../../src/services/InhouseService';
 import { MongoDatabaseProvider } from '../../src/services/MongoDBService';
-import { expect } from 'chai';
 import 'mocha';
 const mongodb_config = require('../config/mongo_config.json');
 
-describe('Inhouse service tests (profiles)', () => {
+import * as chai from 'chai'
+import * as chaiAsPromised from 'chai-as-promised'
+chai.use(chaiAsPromised)
+const expect = chai.expect;
+
+describe('Inhouse service tests (profiles)', function () {
   // Connect to database
   before(function (done) {
     this.timeout(5000);
@@ -31,7 +35,7 @@ describe('Inhouse service tests (profiles)', () => {
     expect(profile).to.exist;
     expect(profile.leagueid).to.equal(27740958);
 
-    expect(async () => await InhouseService.updateInhouseProfile("177207819710365696", "temp", "dtwizzledante")).to.throw;
+    await expect(InhouseService.updateInhouseProfile("177207819710365696", "temp", "dtwizzledante")).to.be.rejected;
   });
 
   it('Inhouse profile creation with existing leagueid', async () => {
@@ -39,14 +43,14 @@ describe('Inhouse service tests (profiles)', () => {
     expect(profile).to.exist;
     expect(profile.leagueid).to.equal(27740958);
 
-    expect(async () => await InhouseService.createInhouseProfile("190173937181655040", "temp", "dtwizzledante")).to.throw;
+    await expect(InhouseService.createInhouseProfile("190173937181655040", "temp", "Menoikeus")).to.be.rejected;
   });
 
   it('Inhouse profile getting by discord id', async () => {
     let user = await InhouseService
       .getInhouseProfileByDiscordId("177207819710365696","test");
     expect(user).not.null;
-    expect(user.leagueid).equals("27740958");
+    expect(user.leagueid).to.equal("27740958");
   });
   it('Inhouse profile getting by summoner id', async () => {
     let user = await InhouseService
@@ -71,5 +75,13 @@ describe('Inhouse service tests (profiles)', () => {
 
   after(function() {
     MongoDatabaseProvider.close();
+  });
+});
+
+describe('Inhouse game tests', () => {
+  it('Getting nonexistent inhouse profile', async () => {
+    let game = {
+
+    }
   });
 });

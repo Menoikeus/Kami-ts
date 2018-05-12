@@ -2,11 +2,22 @@ import RiotApiService from '../../src/services/RiotApiService';
 import { Client, Message, TextChannel, Guild } from "discord.js";
 import { MongoDatabaseProvider } from '../../src/services/MongoDBService';
 const mongodb_config = require('../config/mongo_config.json');
-import { expect } from 'chai';
-import 'mocha';
+
+import * as chai from 'chai'
+import * as chaiAsPromised from 'chai-as-promised'
+chai.use(chaiAsPromised)
+const expect = chai.expect;
+
+/*
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+chai.use(chaiAsPromised);
+const expect = chai.expect;
+const should = chai.should();*/
 
 describe('League API tests', () => {
   let summoner;
+  let game;
 
   // Connect to database
   before(function (done) {
@@ -22,7 +33,18 @@ describe('League API tests', () => {
   });
 
   it('Get summoner by username', async () => {
-    expect(summoner = await RiotApiService.getSummonerByName("Menoikeus")).to.not.throw;
+    let summoner = await expect(RiotApiService.getSummonerByName("Menoikeus")).to.not.be.rejected;
     expect(summoner.id).to.equal(27740958);
+  });
+
+  it('Get ongoing game by userid while no game is in progreses', async () => {
+    await expect(RiotApiService.getCurrentGameByUserId("177235182489829376", "test")).to.be.rejected;
+  });
+  it('Get ongoing game by leagueid while no game is in progreses', async () => {
+    await expect(RiotApiService.getCurrentGameByLeagueId("31031782")).to.be.rejected;
+  });
+
+  it('Get ongoing game by userid without inhouse account', async () => {
+    await expect(RiotApiService.getCurrentGameByUserId("not", "test")).to.be.rejected;
   });
 });

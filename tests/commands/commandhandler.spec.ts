@@ -1,8 +1,12 @@
 import { Command, CommandHandler } from '../../src/services/CommandService';
 import { Client, Message, TextChannel, Guild } from "discord.js";
 const mongodb_config = require('../config/mongo_config.json');
-import { expect } from 'chai';
 import 'mocha';
+
+import * as chai from 'chai'
+import * as chaiAsPromised from 'chai-as-promised'
+chai.use(chaiAsPromised)
+const expect = chai.expect;
 
 describe('Command tests', () => {
   // Create reusable command
@@ -40,19 +44,19 @@ describe('Command tests', () => {
     commandHandler.addCommand(command);
 
     // Find and run
-    expect(commandHandler.findAndRun({ content: "!inhouse join" } as any, "!")).to.not.throw;
+    await expect(commandHandler.findAndRun({ content: "!inhouse join" } as any, "!")).to.not.be.rejected;
   });
 
-  it('Command handler with nonexistent command', () => {
+  it('Command handler with nonexistent command', async () => {
     // Create command handler and add command
     let commandHandler: CommandHandler = new CommandHandler(new Client());
     commandHandler.addCommand(command);
 
     // Find and run
-    expect(commandHandler.findAndRun({ content: "!house join" } as any, "!")).to.not.throw;
+    await expect(commandHandler.findAndRun({ content: "!house join" } as any, "!")).to.not.be.rejected;
   });
 
-  it('Command handler with command with args', () => {
+  it('Command handler with command with args', async () => {
     // Create command with args
     let command: Command = {
       caller: ["inhouse", "join"],
@@ -66,10 +70,10 @@ describe('Command tests', () => {
     commandHandler.addCommand(command);
 
     // Find and run
-    expect(commandHandler.findAndRun({ content: "!inhouse join #1523" } as any, "!")).to.not.throw;
+    await expect(commandHandler.findAndRun({ content: "!inhouse join #1523" } as any, "!")).to.not.be.rejected;
   });
 
-  it('Command handler with command with multiple args', () => {
+  it('Command handler with command with multiple args', async  () => {
     // Create command with args
     let command: Command = {
       caller: ["inhouse", "join"],
@@ -83,7 +87,7 @@ describe('Command tests', () => {
     commandHandler.addCommand(command);
 
     // Find and run
-    expect(commandHandler.findAndRun({ content: "!inhouse join mingo #1523 de" } as any, "!")).to.not.throw;
+    await expect(commandHandler.findAndRun({ content: "!inhouse join mingo #1523 de" } as any, "!")).to.not.be.rejected;
   });
 
   it('Command handler with command with quoted args', () => {
@@ -122,19 +126,15 @@ describe('Command tests', () => {
 
     let threw: boolean = false;
     // Find and run
-    commandHandler.findAndRun({ content: "!inhouse join \"John Pikeman's\" lobby\"" } as any, "!").catch(() => {
-      threw = true;
-    }).finally(() => {
-      expect(threw).to.be.true;
-    });
+    await expect(commandHandler.findAndRun({ content: "!inhouse join \"John Pikeman's\" lobby\"" } as any, "!")).to.be.rejected;
   });
 
-  it('Command handler with command with weird spacing', () => {
+  it('Command handler with command with weird spacing', async () => {
     // Create command handler and add command
     let commandHandler: CommandHandler = new CommandHandler(new Client());
     commandHandler.addCommand(command);
 
     // Find and run
-    expect(commandHandler.findAndRun({ content: "!inhouse    join  " } as any, "!")).to.not.throw;
+    await expect(commandHandler.findAndRun({ content: "!inhouse    join  " } as any, "!")).to.not.be.rejected;
   });
 });

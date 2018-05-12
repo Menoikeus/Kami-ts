@@ -41,7 +41,7 @@ describe('Profile service tests', () => {
   it('Check profile properties', async () => {
     let user = await ProfileService.getUserProfileById("177207819710365696","test");
     expect(user._id).not.null;
-    expect(user.userid).equals("177207819710365696");
+    expect(user.userid).to.equal("177207819710365696");
     expect(user.level).not.null;
     expect(user.exp).not.null;
   });
