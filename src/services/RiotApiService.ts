@@ -16,26 +16,20 @@ export default class RiotApiService {
 
   private static catchSummonerError(error) {
     switch(error.statusCode) {
-      case 400: console.log("lolapi error " + error.statusCode + ": Bad Request");
-        throw new Error("I don't know why, but something broke.");
-      case 403: console.log("lolapi error " + error.statusCode + ": Forbidden");
-          throw new Error("Looks like the api key currently isn't working. Please tell the dev.");
-      case 404: console.log("lolapi error " + error.statusCode + ": Summoner not found");
-        throw new Error("That summoner name does not exist!");
-      case 429: console.log("lolapi error " + error.statusCode + ": Too many requests");
-        throw new Error("There's been too many requests! Please try again in a moment.");
+      case 400: throw new RiotApiError("I don't know why, but something broke.", error.statusCode);
+      case 403: throw new RiotApiError("Looks like the api key currently isn't working. Please tell the dev.", error.statusCode);
+      case 404: throw new RiotApiError("That summoner name doesn't exist!", error.statusCode);
+      case 429: throw new RiotApiError("There's been too many requests! Please try again in a moment.", error.statusCode);
       case 500:
       case 502:
       case 503:
-      case 504:
-        console.log("lolapi error " + error.statusCode + ": Server unreachable");
-        throw new Error("Riot's servers seem to be unreachable right now.");
-      default:
-        console.log(error);
+      case 504: throw new RiotApiError("Riot's servers seem to be unreachable right now.", error.statusCode);
+      default: console.log(error);
         throw new Error("Unexpected error");
     }
   }
 
+  /************************* Game methods ************************************/
   public static async getCurrentGameByUserId(userid: string, guildid: string) {
     const profile = await InhouseService.getInhouseProfileByDiscordId(userid, guildid);
     if(!profile) throw new Error("You're not in the league! Use '!inhouse add $USERNAME' to add your summoner!");
@@ -48,29 +42,40 @@ export default class RiotApiService {
       return await RiotApiService.lolapi.Spectator.gettingActiveGame(leagueid);
     }
     catch(error) {
-      RiotApiService.catchMatchError(error);
+      RiotApiService.catchGameError(error);
     }
   }
 
-  private static catchMatchError(error) {
+  public static async getFinishedGameByGameId(gameid: string) {
+    try {
+      return await RiotApiService.lolapi.Match.gettingById(gameid);
+    }
+    catch(error) {
+      RiotApiService.catchGameError(error);
+    }
+  }
+
+  private static catchGameError(error) {
     switch(error.statusCode) {
-      case 400: console.log("lolapi error " + error.statusCode + ": Bad Request");
-        throw new Error("I don't know why, but something broke.");
-      case 403: console.log("lolapi error " + error.statusCode + ": Forbidden");
-          throw new Error("Looks like the api key currently isn't working. Please tell the dev.");
-      case 404: console.log("lolapi error " + error.statusCode + ": Match not found");
-        throw new Error("You're not in a game right now!");
-      case 429: console.log("lolapi error " + error.statusCode + ": Too many requests");
-        throw new Error("There's been too many requests! Please try again in a moment.");
+      case 400: throw new RiotApiError("I don't know why, but something broke.", error.statusCode);
+      case 403: throw new RiotApiError("Looks like the api key currently isn't working. Please tell the dev.", error.statusCode);
+      case 404: throw new RiotApiError("That game doesn't exist.", error.statusCode);
+      case 429: throw new RiotApiError("There's been too many requests! Please try again in a moment.", error.statusCode);
       case 500:
       case 502:
       case 503:
-      case 504:
-        console.log("lolapi error " + error.statusCode + ": Server unreachable");
-        throw new Error("Riot's servers seem to be unreachable right now.");
-      default:
-        console.log(error);
+      case 504: throw new RiotApiError("Riot's servers seem to be unreachable right now.", error.statusCode);
+      default: console.log(error);
         throw new Error("Unexpected error");
     }
   }
+}
+
+class RiotApiError extends Error {
+  statusCode: number;
+
+  constructor(message: string, code: number) {
+    super(message);
+    this.statusCode = code;
+  };
 }

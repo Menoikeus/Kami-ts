@@ -1,5 +1,5 @@
 import Tree from "../data_structures/Tree";
-import { Message, Client, GuildMember } from "discord.js";
+import { Message, TextChannel, Client, GuildMember } from "discord.js";
 import { MongoClient, Collection } from 'mongodb';
 import { MongoDatabaseProvider } from './MongoDBService';
 import RiotApiService from "./RiotApiService";
@@ -101,9 +101,9 @@ export default class InhouseService {
   }
 
   /** Gets all the inhouse players who are currently in this game */
-  public static async getAllInhousePlayersInGame(game, guildid: string): Promise<Array<Object>> {
-    let participantIds = [];
-    game.participants.forEach((participant) => { participantIds.push(participant.summonerid); });
+  public static async getAllInhousePlayersInGame(game, guildid: string): Promise<Array<any>> {
+    let participantIds: Array<any> = [];
+    game.participants.forEach((participant) => { participantIds.push(participant.summonerId); });
     const query = {
       leagueid: {
         $in: participantIds
@@ -111,5 +111,29 @@ export default class InhouseService {
     };
 
     return await InhouseService.getInhouseProfilesBy(query, guildid);
+  }
+
+  /************ Inhouse matches *****************************************************/
+  /** Get an inhouse match by its game id **/
+  public static getInhouseMatchByGameId(gameid: string, guildid: string) {
+    let db: MongoClient = MongoDatabaseProvider.getDatabase();
+
+    return db.db(guildid).collection("inhouse_matches")
+      .findOne({ gameId: gameid });
+  }
+
+  /** Get an inhouse match by a query **/
+  public static getInhouseMatchBy(query, guildid: string) {
+    let db: MongoClient = MongoDatabaseProvider.getDatabase();
+
+    return db.db(guildid).collection("inhouse_matches")
+      .findOne(query);
+  }
+
+  /** Gets the inhouse players collection */
+  public static getInhouseMatchesCollection(guildid: string) {
+    let db: MongoClient = MongoDatabaseProvider.getDatabase();
+
+    return db.db(guildid).collection("inhouse_matches");
   }
 }
