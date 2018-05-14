@@ -72,16 +72,18 @@ describe('Inhouse service tests (profiles)', function () {
       .getInhouseProfileByDiscordId("277409w58", "test");
     expect(user).is.null;
   });
-
-  after(function() {
-    MongoDatabaseProvider.close();
-  });
 });
 
 describe('Inhouse game tests', () => {
-  it('Getting nonexistent inhouse profile', async () => {
-    let game = {
+  const game = require('../data/sample_game_3v3.json');
 
-    }
+  it('Finding inhouse players in a custom game', async () => {
+    let inhousePlayers = await InhouseService.getAllInhousePlayersInGame(game, "test");
+
+    inhousePlayers.forEach(player => expect(player.leagueid).to.satisfy(x => x === 27740958 || x === 41230748));
+  });
+
+  after(function() {
+    MongoDatabaseProvider.close();
   });
 });
