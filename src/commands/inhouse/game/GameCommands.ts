@@ -3,6 +3,7 @@ import { Command, CommandList } from '../../../services/CommandService';
 import InhouseService from '../../../services/InhouseService';
 import RiotApiService from '../../../services/RiotApiService';
 import InfoService from '../../../services/InfoService';
+import MatchService from '../../../services/MatchService';
 
 export class StartGame extends Command {
   constructor() {
@@ -19,6 +20,10 @@ export class StartGame extends Command {
     // Get the summoner's game
     let game = await RiotApiService.getCurrentGameByUserId(userid, guildid);
 
+    // Check if we're watching the game already
+    let existingGame = InhouseService.getInhouseMatchBy(game.gameId, guildid);
+    if(existingGame) throw new Error("The game you're in is already being watched!");
+
     // Check if its a custom game
     if(game.gameType != "CUSTOM_GAME") throw new Error("Inhouse games must be custom games!");
 
@@ -31,6 +36,6 @@ export class StartGame extends Command {
                       " Please link your accounts with summoners using !inhouse add $USERNAME");
     }
 
-
+    MatchService.insertUnfinishedMatchIntoDatabase(game, guildid, message.channel.id);
   }
 }
