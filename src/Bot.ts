@@ -6,6 +6,8 @@ import { MongoClient } from 'mongodb';
 import GuildService from './services/GuildService';
 import ProfileService from './services/ProfileService';
 import InfoService from './services/InfoService';
+import MatchService from './services/MatchService';
+import OutputService from './services/OutputService';
 
 const config = require('../config/global_config.json');
 const mongodb_config = require('../config/mongodb/mongo_config.json');
@@ -33,7 +35,11 @@ export class Bot {
     }).then(() => {
       this.setupCommands();
     }).then(() => {
-      setTimeout(() => this.setupGuilds(), 2000);
+      setTimeout(() => {
+        this.setupGuilds();
+        MatchService.setupMatchService(this.client);
+        OutputService.setupOutputService(this.client);
+      }, 2000);
     });
   }
 
@@ -67,9 +73,14 @@ export class Bot {
     console.log("Adding guilds");
     this.client.guilds.forEach((guild: Guild) => {
       GuildService.addGuildToDatabase(guild);
+      setTimeout(() => { this.createWatcher(guild.id); }, Math.floor(Math.random() * 180) * 1000);
     });
 
-    this.client.on("guildCreate", (guild: Guild) => GuildService.addGuildToDatabase(guild));
+    this.client.on("guildCreate", (guild: Guild) => { GuildService.addGuildToDatabase(guild); this.createWatcher(guild.id); });
     this.client.on("guildMemberAdd", (member: GuildMember) => ProfileService.createProfileInServer(member.user.id, member.guild.id));
+  }
+
+  private createWatcher(guildid: string): void {
+    MatchService.startMatchWatcher(this.client, guildid);
   }
 }

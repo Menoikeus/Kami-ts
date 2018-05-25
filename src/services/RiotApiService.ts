@@ -59,7 +59,7 @@ export default class RiotApiService {
     switch(error.statusCode) {
       case 400: throw new RiotApiError("I don't know why, but something broke.", error.statusCode);
       case 403: throw new RiotApiError("Looks like the api key currently isn't working. Please tell the dev.", error.statusCode);
-      case 404: throw new RiotApiError("That game doesn't exist.", error.statusCode);
+      case 404: throw new RiotApiError("You're not in a game right now!", error.statusCode);
       case 429: throw new RiotApiError("There's been too many requests! Please try again in a moment.", error.statusCode);
       case 500:
       case 502:

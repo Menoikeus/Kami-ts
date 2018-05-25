@@ -23,4 +23,13 @@ export default class InfoService {
 
     return db.db(guildid).collection("info");
   }
+
+  /** Gets the global inhouse info from kami db **/
+  public static getGlobalInhouseInfo(){
+    let db: MongoClient = MongoDatabaseProvider.getDatabase();
+
+    return db.db("kami_db").collection("global_info").findOne({
+      info_type: "league_api_info"
+    });
+  }
 }

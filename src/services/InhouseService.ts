@@ -12,7 +12,7 @@ export default class InhouseService {
     let db: MongoClient = MongoDatabaseProvider.getDatabase();
 
     return db.db(guildid).collection("inhouse_players")
-      .findOne({ userid: userid });
+      .findOne({ userid: String(userid) });
   }
 
   /** Gets the inhouse profile in a guild for a discord user using their
@@ -21,7 +21,7 @@ export default class InhouseService {
     let db: MongoClient = MongoDatabaseProvider.getDatabase();
 
     return db.db(guildid).collection("inhouse_players")
-      .findOne({ leagueid: leagueid });
+      .findOne({ leagueid: String(leagueid) });
   }
 
   /** Gets inhouse profiles in a guild that match the query conditions */
@@ -56,8 +56,8 @@ export default class InhouseService {
       }
       else {
         await InhouseService.getInhouseProfileCollection(guildid).update(
-          { userid: userid },
-          { $set: { leagueid: summoner.id } }
+          { userid: String(userid) },
+          { $set: { leagueid: String(summoner.id) } }
         );
         return "I've successfully linked your account with summoner " + summoner.name;
       }
@@ -90,8 +90,8 @@ export default class InhouseService {
   private static async addNewProfile(userid: string, guildid: string, leagueid: string) {
     const inhouse_info = await InfoService.getInhouseInfo(guildid);
     const info = {
-      "userid"	    : userid,
-      "leagueid"    : leagueid,
+      "userid"	    : String(userid),
+      "leagueid"    : String(leagueid),
       "matches"     : [],
       "elo"         : inhouse_info.i_default_elo,
     }
@@ -101,9 +101,9 @@ export default class InhouseService {
   }
 
   /** Gets all the inhouse players who are currently in this game */
-  public static async getAllInhousePlayersInGame(game, guildid: string): Promise<Array<any>> {
+  public static async getAllInhousePlayersInMatch(game, guildid: string): Promise<Array<any>> {
     let participantIds: Array<any> = [];
-    game.participants.forEach((participant) => { participantIds.push(participant.summonerId); });
+    game.participants.forEach((participant) => { participantIds.push(String(participant.summonerId)); });
     const query = {
       leagueid: {
         $in: participantIds
@@ -115,11 +115,11 @@ export default class InhouseService {
 
   /************ Inhouse matches *****************************************************/
   /** Get an inhouse match by its game id **/
-  public static getInhouseMatchByGameId(gameid: string, guildid: string) {
+  public static getInhouseMatchByMatchId(matchid: string, guildid: string) {
     let db: MongoClient = MongoDatabaseProvider.getDatabase();
 
     return db.db(guildid).collection("inhouse_matches")
-      .findOne({ gameId: gameid });
+      .findOne({ matchid: String(matchid) });
   }
 
   /** Get an inhouse match by a query **/

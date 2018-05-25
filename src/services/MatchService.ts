@@ -9,103 +9,117 @@ import InhouseService from "./InhouseService";
 const schedule = require('node-schedule');
 
 export default class MatchService {
-  public static async insertUnfinishedMatchIntoDatabase(game, guildid: string, channelid: string) {
-    game.completed = false;
+  static client: Client;
 
-    let ongoingGame: any = {};
+  public static async setupMatchService(client: Client) {
+    this.client = client;
+  }
 
-    ongoingGame.gameId = game.gameId;
-    ongoingGame.channelId = game.channelid;
-    ongoingGame.participants = game.participants;
-    ongoingGame.gameStartTime = game.gameStartTime;
-    ongoingGame.completed = false;
+  public static async insertUnfinishedMatchIntoDatabase(match, guildid: string, channelid: string) {
+    let ongoingMatch: any = {};
+
+    ongoingMatch.matchid = String(match.gameId);
+    ongoingMatch.channelid = channelid;
+    ongoingMatch.participants = match.participants;
+    ongoingMatch.matchStartTime = match.gameStartTime;
+    ongoingMatch.completed = false;
 
     // Insert the match
-    await InhouseService.getInhouseMatchesCollection(guildid).update({ gameId: ongoingGame.gameId }, ongoingGame, { upsert: true });
+    await InhouseService.getInhouseMatchesCollection(guildid).update({ matchid: ongoingMatch.gameId }, ongoingMatch, { upsert: true });
   }
 
   public static async startMatchWatcher(client: Client, guildid: string) {
-    schedule.scheduleJob('*/5 * * * *', async function() {
+    console.log("Created watcher for guild " + guildid);
+    schedule.scheduleJob('*/3 * * * *', async function() {
+      console.log("Checking game status for guild " + guildid);
+
       let ongoingMatches = await InhouseService.getInhouseMatchesCollection(guildid).find({ completed: false }).toArray();
-      let inhouseInfo = await InfoService.getInhouseInfo(guildid);
+      let inhouseInfo = ongoingMatches.length == 0 ? {} : await InfoService.getInhouseInfo(guildid);
 
       ongoingMatches.forEach(async function(match) {
-        let channel: TextChannel = client.guilds[guildid].channels[match.channelId];
-        let matchid = match.gameId;
-        let finishedGame;
-
-        try {
-          finishedGame = await MatchService.getGameStatus(matchid, match.participants[0].summonerId);
-        }
-        catch(error) {
-          if(error.statusCode && error.statusCode === 404) {
-            channel.send(error.message);
-            await InhouseService.getInhouseMatchesCollection(guildid).deleteOne({ gameId: matchid });
-          }
-          throw error;
-        }
-
-        let inhousePlayers = await InhouseService.getAllInhousePlayersInGame(match, guildid);
-        let inhousePlayerMap = {};
-        for(let i in inhousePlayers) {
-          inhousePlayerMap[inhousePlayers[i].leagueid] = inhousePlayers[i];
-        }
-
-        let finalParticipants = [];
-        finishedGame.participants.forEach(finishedParticipant => {
-          match.participants.forEach(matchParticipant => {
-            const championid = matchParticipant.championId;
-            const teamid = matchParticipant.teamId;
-
-            if(finishedParticipant.teamId === teamid && finishedParticipant.championId === championid) {
-              if(inhousePlayers[matchParticipant.summonerId]) {
-                finishedParticipant.userid = inhousePlayers[matchParticipant.summonerId].userid,
-                finishedParticipant.summonerId = inhousePlayers[matchParticipant.summonerId].leagueid;
-              }
-              finalParticipants.push(finishedParticipant);
-            }
-          });
-        });
-
-        const winnerid = finishedGame.teams[0].win == "Fail" ? 200 : 100;
-        let players = MatchService.calculateEloDelta(finalParticipants, inhouseInfo.i_volatility_constant, winnerid);
-
-        // Input elo changes
-        players.forEach(player => {
-          // update info if they're in the league
-          if(player.userid) {
-            InhouseService.getInhouseProfileCollection(guildid).update(
-              { userid: player.userid },
-              { $inc:
-                { elo:  ( player.elo_delta) },
-                $push:
-                { matches : String(matchid) }
-              }
-            );
-          }
-        });
-
-        // Add finished game to db
-        const currentTime = (new Date()).getTime();
-        const query = String(matchid);
-        await InhouseService.getInhouseMatchesCollection(guildid).replaceOne(
-          { matchid: query },
-          {
-            matchid       :  matchid,
-            players       :  players,
-            teams         :  finishedGame.teams,
-            winning_team  :  winnerid,
-            length        :  finishedGame.gameDuration,
-            date          :  currentTime,
-            completed     :  true
-          });
-
-        channel.send("Inhouse game completed!");
+        let message = await MatchService.checkMatch(match, inhouseInfo, guildid);
+        let channel: TextChannel = <TextChannel>this.client.guilds.get(guildid).channels.get(match.channelid);
+        channel.send(message);
       });
     });
   }
 
-  private static async getGameStatus(gameid: string, leagueid: string) {
+  public static async checkMatch(match, inhouseInfo, guildid: string): Promise<String> {
+    let matchid = match.matchid;
+    let finishedMatch;
+
+    try {
+      finishedMatch = await MatchService.getMatchStatus(matchid, match.participants[0].summonerId);
+    }
+    catch(error) {
+      if(error.statusCode && error.statusCode === 404) {
+        await InhouseService.getInhouseMatchesCollection(guildid).deleteOne({ matchid: matchid });
+        return error.message;
+      }
+      throw error;
+    }
+
+    let inhousePlayers = await InhouseService.getAllInhousePlayersInMatch(match, guildid);
+    let inhousePlayerMap = {};
+    for(let i in inhousePlayers) {
+      inhousePlayerMap[inhousePlayers[i].leagueid] = inhousePlayers[i];
+    }
+
+    let finalParticipants = [];
+    finishedMatch.participants.forEach(finishedParticipant => {
+      match.participants.forEach(matchParticipant => {
+        const championid = matchParticipant.championId;
+        const teamid = matchParticipant.teamId;
+
+        if(finishedParticipant.teamId == teamid && finishedParticipant.championId == championid) {
+          if(inhousePlayerMap[matchParticipant.summonerId]) {
+            finishedParticipant.userid = inhousePlayerMap[matchParticipant.summonerId].userid,
+            finishedParticipant.summonerId = inhousePlayerMap[matchParticipant.summonerId].leagueid;
+          }
+          finishedParticipant.elo = inhouseInfo.i_default_elo;
+          finalParticipants.push(finishedParticipant);
+        }
+      });
+    });
+
+    const winnerid = finishedMatch.teams[0].win == "Fail" ? 200 : 100;
+    let players = MatchService.calculateEloDelta(finalParticipants, inhouseInfo.i_volatility_constant, winnerid);
+
+    // Input elo changes
+    players.forEach(player => {
+      // update info if they're in the league
+      if(player.userid) {
+        InhouseService.getInhouseProfileCollection(guildid).update(
+          { userid: player.userid },
+          { $inc:
+            { elo:  player.elo_delta },
+            $push:
+            { matches : String(matchid) }
+          }
+        );
+      }
+    });
+
+    // Add finished game to db
+    const currentTime = (new Date()).getTime();
+    const query = String(matchid);
+    await InhouseService.getInhouseMatchesCollection(guildid).replaceOne(
+      { matchid: query },
+      {
+        matchid       :  matchid,
+        players       :  players,
+        teams         :  finishedMatch.teams,
+        winning_team  :  winnerid,
+        length        :  finishedMatch.gameDuration,
+        date          :  currentTime,
+        completed     :  true
+      });
+
+    console.log("Match " + matchid + " for guild " + guildid + " has been completed");
+    return "Inhouse match " + matchid + " completed!";
+  }
+
+  private static async getMatchStatus(gameid: string, leagueid: string) {
     // Try to get the finished game data
     try {
       return await RiotApiService.getFinishedGameByGameId(gameid);
@@ -120,7 +134,7 @@ export default class MatchService {
         // Thus, the game ended prematurely
         if(error.statusCode && error.statusCode === 404) {
           throw {
-            messsage: "The game with id " + gameid + " ended prematurely! Not counting match.",
+            messsage: "Match " + gameid + " ended prematurely! Not counting match.",
             statusCode: 404
           }
         }
@@ -129,7 +143,7 @@ export default class MatchService {
     }
   }
 
-  private static calculateEloDelta(participants, volatilityConstant: number, winnerid: number) {
+  public static calculateEloDelta(participants, volatilityConstant: number, winnerid: number) {
     const loserid = winnerid == 100 ? 200 : 100;
     const winning_players = participants.filter(participant => participant.teamId == winnerid);
     const losing_players = participants.filter(participant => participant.teamId == loserid);

@@ -9,7 +9,7 @@ export default class ProfileService {
   public static getUserProfileById(userid: string, guildid: string) {
     let db: MongoClient = MongoDatabaseProvider.getDatabase();
 
-    return db.db(guildid).collection("users").findOne({ userid: userid });
+    return db.db(guildid).collection("users").findOne({ userid: String(userid) });
   }
 
   /* General queries */
@@ -31,9 +31,9 @@ export default class ProfileService {
 
   public static async createProfileInServer(userid: string, guildid: string) {
     let userObj = {
-      "userid"		: userid,
-  		"level"			: 0,
-  		"exp"				: 0
+      "userid"		: String(userid),
+  		"level"			: Number(0),
+  		"exp"				: Number(0)
     }
 
     let existingUser = await ProfileService.getUserProfileById(userid, guildid);
