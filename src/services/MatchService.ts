@@ -30,22 +30,30 @@ export default class MatchService {
 
   public static async startMatchWatcher(client: Client, guildid: string) {
     console.log("Created watcher for guild " + guildid);
-    schedule.scheduleJob('*/3 * * * *', async function() {
-      console.log("Checking game status for guild " + guildid);
+    const minutesBetweenChecks: number = 3;
+    let minSinceCheck: number = Math.floor(Math.random() * minutesBetweenChecks);
+    schedule.scheduleJob(Math.floor(Math.random() * 60) + ' * * * * *', async function() {
+      if(minSinceCheck + 1 >= 3) {
+        minSinceCheck = 0;
+        console.log("Checking game status for guild " + guildid);
 
-      let ongoingMatches = await InhouseService.getInhouseMatchesCollection(guildid).find({ completed: false }).toArray();
-      let inhouseInfo = ongoingMatches.length == 0 ? {} : await InfoService.getInhouseInfo(guildid);
+        let ongoingMatches = await InhouseService.getInhouseMatchesCollection(guildid).find({ completed: false }).toArray();
+        let inhouseInfo = ongoingMatches.length == 0 ? {} : await InfoService.getInhouseInfo(guildid);
 
-      ongoingMatches.forEach(async function(match) {
-        let message = await MatchService.checkMatch(match, inhouseInfo, guildid);
-        let channel: TextChannel = <TextChannel>this.client.guilds.get(guildid).channels.get(match.channelid);
-        channel.send(message);
-      });
+        ongoingMatches.forEach(async function(match) {
+          let message = await MatchService.checkMatch(match, inhouseInfo, guildid);
+          let channel: TextChannel = <TextChannel>this.client.guilds.get(guildid).channels.get(match.channelid);
+          channel.send(message);
+        });
+      }
+      else {
+        minSinceCheck += 1;
+      }
     });
   }
 
   public static async checkMatch(match, inhouseInfo, guildid: string): Promise<String> {
-    let matchid = match.matchid;
+    let matchid: string = match.matchid;
     let finishedMatch;
 
     try {
@@ -92,26 +100,23 @@ export default class MatchService {
         InhouseService.getInhouseProfileCollection(guildid).update(
           { userid: player.userid },
           { $inc:
-            { elo:  player.elo_delta },
-            $push:
-            { matches : String(matchid) }
+            { elo:  player.elo_delta }
           }
         );
       }
     });
 
     // Add finished game to db
-    const currentTime = (new Date()).getTime();
-    const query = String(matchid);
+    const completionTime: number = finishedMatch.gameCreation + finishedMatch.Duration * 1000;
     await InhouseService.getInhouseMatchesCollection(guildid).replaceOne(
-      { matchid: query },
+      { matchid: matchid },
       {
         matchid       :  matchid,
         players       :  players,
         teams         :  finishedMatch.teams,
         winning_team  :  winnerid,
         length        :  finishedMatch.gameDuration,
-        date          :  currentTime,
+        date          :  completionTime,
         completed     :  true
       });
 

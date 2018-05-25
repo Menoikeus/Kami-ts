@@ -92,7 +92,6 @@ export default class InhouseService {
     const info = {
       "userid"	    : String(userid),
       "leagueid"    : String(leagueid),
-      "matches"     : [],
       "elo"         : inhouse_info.i_default_elo,
     }
 

@@ -3,6 +3,7 @@ import { MongoClient, Collection } from 'mongodb';
 import { MongoDatabaseProvider } from './MongoDBService';
 import InfoService from './InfoService';
 import StatisticsService from './StatisticsService';
+import InhouseService from "./InhouseService";
 
 export default class OutputService {
   static client: Client;
@@ -20,6 +21,7 @@ export default class OutputService {
   static winEmoji;
   static loseEmoji;
 
+  /** Sets up all the emojis and variables for the output service */
   public static async setupOutputService(client: Client) {
     this.client = client;
     this.globalInhouseInfo = await InfoService.getGlobalInhouseInfo();
@@ -37,7 +39,7 @@ export default class OutputService {
     this.loseEmoji = `${this.client.emojis.get('448921473177092106')}`;
   }
 
-  /** Gets the inhouse info of a specified guild */
+  /** Formats a match into discord embed form */
   public static async outputMatch(match): Promise<Object> {
     // See who won
     const blueTeamWin: boolean = match.winning_team === 100;
@@ -131,7 +133,7 @@ export default class OutputService {
     return embed;
   }
 
-  /** Gets the inhouse info of a specified guild */
+  /** Outputs a profile and its statistics in discord embed form */
   public static async outputInhouseProfile(profile, guildid: string): Promise<Object> {
     const userid = profile.userid;
     const user: User = this.client.users.get(userid);
@@ -144,7 +146,6 @@ export default class OutputService {
     // Create the output for the aggregate data
     let statsOutput: string = "";
     if(statistics && statistics.matchesPlayed != 0) {
-      console.log("IN");
       statsOutput +=
         "**KDA:**   " +
         statistics.averageKills.toFixed(1) + " / " +
@@ -162,10 +163,10 @@ export default class OutputService {
 
       const champion: any = globalInhouseInfo.champion_icons.find((icon) => { return icon.id == match.championId });
       const kda: string = match.stats.kills + "/" + match.stats.deaths + "/" + match.stats.assists;
-      const win: string = "**" + (match.win ? "W" : "L  ") + "**";
+      const win: string = "**" + (match.win ? this.winEmoji : (this.loseEmoji)) + "**";
       const matchid: string = match.matchid;
 
-      matchOutput += "**" + matchid + "** | " + championEmoji + " " + win + " - " + champion.name + ": " + kda + "\n";
+      matchOutput += "**" + matchid + "** | " + win + " - " + championEmoji + " " + champion.name + ": " + kda + "\n";
 
       mostRecentChampion = mostRecentChampion || champion.stripped_name;
     });
@@ -220,7 +221,6 @@ export default class OutputService {
       ]
     };
 
-    console.log(embed);
     return embed;
   }
 
@@ -359,5 +359,106 @@ export default class OutputService {
       output += left[i] + right[i];
     }
     return "```" + output + "```";
+  }
+
+  /** Display a list of matches in condensed format */
+  public static async outputMatchList(matches: Array<any>): Promise<any> {
+    let idList: Array<string> = [];
+    let winnerList: Array<string> = [];
+    let dateList: Array<string> = [];
+    matches.forEach((match) => {
+      let teamEmoji = match.winning_team == 100 ? this.blueTeamIcon : this.redTeamIcon;
+      let teamText = match.winning_team == 100 ? "Blue Team" : "Red Team";
+
+      idList.push("**" + match.matchid + "**");
+      winnerList.push(teamEmoji + match.winning_team);
+      dateList.push((new Date(match.date)).toLocaleDateString());
+    });
+
+    const embed = {
+      "title": this.lolEmoji + " Recent matches",
+      "description": "Completed matches for your inhouse league",
+      "color": 16777215,
+      "fields": [
+        {
+          "name": "Match Ids",
+          "value": idList.join(this.blankSpaceEmoji + "\n") || "-",
+          "inline": true
+        },
+        {
+          "name": "Winning Team",
+          "value": winnerList.join("\n") || "-",
+          "inline": true
+        },
+        {
+          "name": "Date Played",
+          "value": dateList.join(this.blankSpaceEmoji + "\n") || "-",
+          "inline": true
+        },
+      ]
+    };
+
+    return embed;
+  }
+
+  public static async outputLeagueInformation(guildid: string) {
+    // Get the top players from the league
+    const topPlayers = await InhouseService.getInhouseProfileCollection(guildid).find().sort({ elo: -1 }).limit(5).toArray();
+
+    // Get the most recent 3 games
+    const matches = await InhouseService.getInhouseMatchesCollection(guildid)
+      .find({ completed: true })
+      .limit(3)
+      .sort({ date: -1 })
+      .toArray();
+
+    // Get the inhouse league creation date
+    const dateCreated = (await InfoService.getInhouseInfo(guildid)).start_date;
+
+    // Get the guild Object
+    const guild: Guild = this.client.guilds.get(guildid);
+
+    // Format the output
+    let topPlayersOutput: Array<string> = [];
+    let counter = 0;
+    topPlayers.forEach((player) => {
+      topPlayersOutput.push("**[" + (counter+1) + "]:**  " + guild.members.get(player.userid).user.username + " - " + player.elo);
+      counter++;
+    });
+
+    let matchesOutput: Array<string> = [];
+    matches.forEach((match) => {
+      matchesOutput.push("**" + match.matchid + " | ** " + (new Date(match.date)).toLocaleDateString());
+    });
+
+    // create embed
+    const embed = {
+      "color": 16777215,
+      "author": {
+        "name": guild.name + " Inhouse League",
+        "icon_url": "https://i.imgur.com/vfBewGB.png",
+      },
+      "thumbnail": {
+        "url": guild.iconURL || "https://i.imgur.com/vfBewGB.png",
+      },
+      "fields": [
+        {
+          "name": "Date Created",
+          "value": (new Date(dateCreated)).toDateString() + this.blankSpaceEmoji,
+        },
+        {
+          "name": "Top Players",
+          "value": topPlayersOutput.join(this.blankSpaceEmoji + "\n") || "-",
+          "inline": true
+        },
+        {
+          "name": "Recent Matches",
+          "value": matchesOutput.join(this.blankSpaceEmoji + "\n") || "-",
+          "inline": true
+        }
+      ]
+    };
+
+    return embed;
   }
 }

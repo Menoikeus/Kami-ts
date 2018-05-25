@@ -79,3 +79,34 @@ export class ShowMatch extends Command {
     message.channel.send({ embed: output });
   }
 }
+
+export class ShowMatches extends Command {
+  constructor() {
+    super(["inhouse", "games"]);
+  };
+
+  public async run(client: Client, message: Message, args: string[]) {
+    // Check for a valid argument
+    if(!(args.length === 0 || args.length === 1)) throw new Error("This command should take a page number!");
+    if(args[0] && isNaN(Number(args[0]))) throw new Error("The argument should be a number!");
+
+    let pageNumber: number = Number(args[0]) || 1;
+    if(pageNumber < 1) throw new Error("The page number should be a number greater than or equal to 1!");
+
+    // Get 3 matches on the specified page
+    const matchesPerPage: number = 3;
+    const guildid: string = message.guild.id;
+    let matches = await InhouseService.getInhouseMatchesCollection(guildid)
+      .find({ completed: true })
+      .limit(matchesPerPage)
+      .skip(matchesPerPage * (pageNumber - 1))
+      .toArray();
+
+    let output = await OutputService.outputMatchList(matches);
+    output.footer = {
+      "text": "Page " + pageNumber,
+    };
+
+    message.channel.send({ embed: output });
+  }
+}

@@ -8,41 +8,41 @@ export default class StatisticsService {
   public static async getInhouseProfileStatisticsByUserId(userid: string, guildid: string) {
     let stats = await InhouseService.getInhouseMatchesCollection(guildid).aggregate([
       {
-      "$match" : {
-        "players.userid" : userid
-      }
-      },
-      {
-      "$project" : {
-        "players" : 1.0,
-        "winningTeam" : "$winning_team",
-        "_id" : 0.0
-      }
-      },
-      {
-      "$unwind" : {
-        "path" : "$players"
-      }
-      },
-      {
-      "$match" : {
-        "players.userid" : userid
-      }
-      },
-      {
-      "$addFields" : {
-        "players.win" : {
-        "$eq" : [
-          "$winningTeam",
-          "$players.teamId"
-        ]
+        "$match" : {
+          "players.userid" : userid
         }
-      }
       },
       {
-      "$replaceRoot" : {
-        "newRoot" : "$players"
-      }
+        "$project" : {
+          "players" : 1.0,
+          "winningTeam" : "$winning_team",
+          "_id" : 0.0
+        }
+      },
+      {
+        "$unwind" : {
+          "path" : "$players"
+        }
+      },
+      {
+        "$match" : {
+          "players.userid" : userid
+        }
+      },
+      {
+        "$addFields" : {
+          "players.win" : {
+          "$eq" : [
+            "$winningTeam",
+            "$players.teamId"
+          ]
+          }
+        }
+      },
+      {
+        "$replaceRoot" : {
+          "newRoot" : "$players"
+        }
       },
       {
         "$group" : {
@@ -77,6 +77,11 @@ export default class StatisticsService {
         "$match" : {
           "players.userid" : userid,
           "completed" : true
+        }
+      },
+      {
+        "$sort" : {
+          "date" : -1.0
         }
       },
       {
@@ -123,11 +128,6 @@ export default class StatisticsService {
           "summonerId" : 1.0,
           "elo_delta" : 1.0,
           "win" : 1.0
-        }
-      },
-      {
-        "$sort" : {
-          "natural" : -1.0
         }
       },
       {
