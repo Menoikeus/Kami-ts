@@ -47,4 +47,11 @@ describe('League API tests', () => {
   it('Get ongoing game by userid without inhouse account', async () => {
     await expect(RiotApiService.getCurrentGameByUserId("not", "test")).to.be.rejected;
   });
+
+  it('Get finished game by match id', async () => {
+    let game = await expect(RiotApiService.getFinishedGameByGameId("2687795498")).to.not.be.rejected;
+
+    expect(game.gameId).to.be.equal(2687795498);
+    expect(game.participants.length).to.be.equal(8);
+  });
 });

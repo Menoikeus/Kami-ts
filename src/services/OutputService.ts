@@ -131,6 +131,98 @@ export default class OutputService {
     return embed;
   }
 
+  /** Gets the inhouse info of a specified guild */
+  public static async outputInhouseProfile(profile, guildid: string): Promise<Object> {
+    const userid = profile.userid;
+    const user: User = this.client.users.get(userid);
+    const globalInhouseInfo = await InfoService.getGlobalInhouseInfo();
+
+    // Get match statistics (first of aggregate data averaged, then of most recent 3 games)
+    const statistics = await StatisticsService.getInhouseProfileStatisticsByUserId(userid, guildid);
+    const recentMatches = await StatisticsService.getRecentMatchDataByUserId(userid, guildid);
+
+    // Create the output for the aggregate data
+    let statsOutput: string = "";
+    if(statistics && statistics.matchesPlayed != 0) {
+      console.log("IN");
+      statsOutput +=
+        "**KDA:**   " +
+        statistics.averageKills.toFixed(1) + " / " +
+        statistics.averageDeaths.toFixed(1) + " / " +
+        statistics.averageAssists.toFixed(1) + "\n" +
+        "**W/L:**   " + (statistics.totalWins / statistics.matchesPlayed * 100).toFixed(1) + "%\n" +
+        "**Games:**   " + statistics.matchesPlayed;
+    }
+
+    // Format the output for the last three matches
+    let mostRecentChampion: string;
+    let matchOutput: string = "";
+    recentMatches.forEach((match) => {
+      const championEmoji: string = OutputService.getEmojiByChampId(match.championId);
+
+      const champion: any = globalInhouseInfo.champion_icons.find((icon) => { return icon.id == match.championId });
+      const kda: string = match.stats.kills + "/" + match.stats.deaths + "/" + match.stats.assists;
+      const win: string = "**" + (match.win ? "W" : "L  ") + "**";
+      const matchid: string = match.matchid;
+
+      matchOutput += "**" + matchid + "** | " + championEmoji + " " + win + " - " + champion.name + ": " + kda + "\n";
+
+      mostRecentChampion = mostRecentChampion || champion.stripped_name;
+    });
+
+    // Set the thumbnail image to their most recently played champion
+    let imageUrl: string;
+    if(mostRecentChampion) {
+      imageUrl = "http://ddragon.leagueoflegends.com/cdn/" + globalInhouseInfo.i_data_dragon_version + "/img/champion/" + mostRecentChampion + ".png";
+    }
+    else {
+      imageUrl = this.client.guilds.get(guildid).iconURL || "https://i.imgur.com/vfBewGB.png";
+    }
+
+    // Set player icon url
+    let playerAvatarUrl: string = user.avatarURL || "https://i.imgur.com/vfBewGB.png";
+
+    // create embed
+    const embed = {
+      "color": 16777215,
+      "author": {
+        "name": user.username + "#" + user.discriminator,
+        "icon_url": playerAvatarUrl,
+        "url": "http://www.lolking.net/summoner/na/" + profile.leagueid
+      },
+      "thumbnail": {
+        "url": imageUrl,
+      },
+      "fields": [
+        {
+          "name": "Discord ID",
+          "value": profile.userid
+        },
+        {
+          "name": "League ID",
+          "value": profile.leagueid,
+          "inline": true
+        },
+        {
+          "name": "Elo",
+          "value": profile.elo,
+          "inline": true
+        },
+        {
+          "name": "Stats",
+          "value": statsOutput || "-"
+        },
+        {
+          "name": "Recent Matches",
+          "value": matchOutput || "-",
+          "inline": true
+        }
+      ]
+    };
+
+    console.log(embed);
+    return embed;
+  }
 
   /** Gets an emoji by the champion id */
   private static getEmojiByChampId(championId: string) {
@@ -198,3 +290,74 @@ export default class OutputService {
     }
   }
 
+  /** Generates and formats a table, given arrays of left and right elements.
+      @param left
+        The left array
+      @param right
+        The right array
+      @param spaces
+        The spaces between the columns
+      @param cutoffLength
+        How far to go (in number of characters) before breaking into a new line */
+  public static generateTables(left: Array<string>, right: Array<string>, spaces: number = 5, cutoffLength: number = 30) {
+    if(left.length != right.length) throw new Error("The left and right columns have differing lengths");
+    if(left.length == 0) throw new Error("There's nothing in the arrays!");
+
+    // Get the max length of any left element
+    let maxLength: number = 0;
+    for(let i in left) {
+      maxLength = left[i].length > maxLength ? left[i].length : maxLength;
+    }
+
+    // Add trailing spaces to match the highest entry length + spaces parameter
+    for(let i in left) {
+      const spacesToAdd: number = maxLength + spaces - left[i].length;
+      left[i] += Array(spacesToAdd + 1).join(" ");
+    }
+
+    const distancesFromLeft = maxLength + spaces + 1;
+    // Add new lines when an entry in the right column overflows the cutoffLength
+    for(let i in right) {
+      let newLines: string = "";
+      const words: Array<string> = right[i].split(" ");
+
+      // Make sure we don't add spaces if it's the first row
+      let firstLine: boolean = true;
+
+      let currentLine: string = "";
+      for(let j in words) {
+        // Check if we've reached the overflow limit
+        if(currentLine.length + words[j].length > cutoffLength) {
+          if(!firstLine) {
+            newLines += Array(distancesFromLeft).join(" ");
+          }
+          else {
+            // Don't add pad spacing if its the first line
+            firstLine = false;
+          }
+
+          // Add the current line to the list of lines, with a line break
+          newLines += currentLine + "\n";
+          // Set the current line to the word
+          currentLine = words[j] + " ";
+        }
+        else {
+          currentLine += words[j] + " ";
+        }
+      }
+
+      // Add the trailing line to the list of lines, if there's anything in it
+      if(currentLine.trim() !== "") {
+        newLines += (firstLine ? "" : Array(distancesFromLeft).join(" ")) + currentLine + "\n";
+      }
+
+      right[i] = newLines;
+    }
+
+    let output = "";
+    for(let i in left) {
+      output += left[i] + right[i];
+    }
+    return "```" + output + "```";
+  }
+}

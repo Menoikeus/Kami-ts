@@ -27,13 +27,13 @@ describe('Inhouse service tests (profiles)', function () {
 
     let profile = await InhouseService.getInhouseProfileByDiscordId("177207819710365696", "temp");
     expect(profile).to.exist;
-    expect(profile.leagueid).to.equal(27740958);
+    expect(profile.leagueid).to.equal("27740958");
   });
 
   it('Inhouse profile creation with existing profile + leagueid', async () => {
     let profile = await InhouseService.getInhouseProfileByDiscordId("177207819710365696", "temp");
     expect(profile).to.exist;
-    expect(profile.leagueid).to.equal(27740958);
+    expect(profile.leagueid).to.equal("27740958");
 
     await expect(InhouseService.updateInhouseProfile("177207819710365696", "temp", "dtwizzledante")).to.be.rejected;
   });
@@ -41,7 +41,7 @@ describe('Inhouse service tests (profiles)', function () {
   it('Inhouse profile creation with existing leagueid', async () => {
     let profile = await InhouseService.getInhouseProfileByDiscordId("177207819710365696", "temp");
     expect(profile).to.exist;
-    expect(profile.leagueid).to.equal(27740958);
+    expect(profile.leagueid).to.equal("27740958");
 
     await expect(InhouseService.createInhouseProfile("190173937181655040", "temp", "Menoikeus")).to.be.rejected;
   });
@@ -78,9 +78,16 @@ describe('Inhouse game tests', () => {
   const game = require('../data/sample_game_3v3.json');
 
   it('Finding inhouse players in a custom game', async () => {
-    let inhousePlayers = await InhouseService.getAllInhousePlayersInGame(game, "test");
+    let inhousePlayers = await InhouseService.getAllInhousePlayersInMatch(game, "test");
 
-    inhousePlayers.forEach(player => expect(player.leagueid).to.satisfy(x => x === 27740958 || x === 41230748));
+    inhousePlayers.forEach(player => expect(player.leagueid).to.satisfy(x => x === "27740958" || x === "41230748"));
+  });
+
+  it('Getting inhouse match by matchid', async() => {
+    let inhouseMatch = await InhouseService.getInhouseMatchByMatchId("2687795498", "test");
+
+    expect(inhouseMatch.matchid).to.be.equal("2687795498");
+    expect(inhouseMatch.players.length).to.be.equal(8);
   });
 
   after(function() {
