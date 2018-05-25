@@ -73,7 +73,7 @@ export class Bot {
     console.log("Adding guilds");
     this.client.guilds.forEach((guild: Guild) => {
       GuildService.addGuildToDatabase(guild);
-      setTimeout(() => { this.createWatcher(guild.id); }, Math.floor(Math.random() * 180) * 1000);
+      this.createWatcher(guild.id);
     });
 
     this.client.on("guildCreate", (guild: Guild) => { GuildService.addGuildToDatabase(guild); this.createWatcher(guild.id); });

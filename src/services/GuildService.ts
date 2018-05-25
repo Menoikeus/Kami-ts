@@ -4,6 +4,7 @@ import { MongoClient, Collection } from 'mongodb';
 import { MongoDatabaseProvider } from './MongoDBService';
 import InfoService from './InfoService';
 import ProfileService from './ProfileService';
+import InhouseService from "./InhouseService";
 
 export default class GuildService {
   /** Gets the profile for a specific user within a guild through the user's
@@ -36,6 +37,9 @@ export default class GuildService {
     // Do the insertion
     await infoCollection.insertMany([server_info, inhouse_info]);
     console.log('New server ID: ' + guildid + ' added');
+
+    // Create indices on matches
+    await InhouseService.getInhouseMatchesCollection(guildid).createIndex({ date: -1 });
 
     // Add members to the server
     GuildService.addMembersToServer(guild);
