@@ -5,16 +5,11 @@ import { MongoDatabaseProvider } from './MongoDBService';
 import RiotApiService from "./RiotApiService";
 import InfoService from "./InfoService";
 import InhouseService from "./InhouseService";
+import OutputService from "./OutputService";
 
 const schedule = require('node-schedule');
 
 export default class MatchService {
-  static client: Client;
-
-  public static async setupMatchService(client: Client) {
-    this.client = client;
-  }
-
   public static async insertUnfinishedMatchIntoDatabase(match, guildid: string, channelid: string) {
     let ongoingMatch: any = {};
 
@@ -42,8 +37,14 @@ export default class MatchService {
 
         ongoingMatches.forEach(async function(match) {
           let message = await MatchService.checkMatch(match, inhouseInfo, guildid);
-          let channel: TextChannel = <TextChannel>this.client.guilds.get(guildid).channels.get(match.channelid);
+          let channel: TextChannel = <TextChannel>client.guilds.get(guildid).channels.get(match.channelid);
           channel.send(message);
+
+          let completedMatch = await InhouseService.getInhouseMatchByMatchId(match.matchid, guildid);
+          if(completedMatch && completedMatch.completed) {
+            let output = await OutputService.outputMatch(completedMatch);
+            channel.send({ embed: output });
+          }
         });
       }
       else {
@@ -107,7 +108,7 @@ export default class MatchService {
     });
 
     // Add finished game to db
-    const completionTime: number = finishedMatch.gameCreation + finishedMatch.Duration * 1000;
+    const completionTime: number = finishedMatch.gameCreation + finishedMatch.gameDuration * 1000;
     await InhouseService.getInhouseMatchesCollection(guildid).replaceOne(
       { matchid: matchid },
       {

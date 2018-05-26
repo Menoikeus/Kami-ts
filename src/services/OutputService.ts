@@ -4,8 +4,13 @@ import { MongoDatabaseProvider } from './MongoDBService';
 import InfoService from './InfoService';
 import StatisticsService from './StatisticsService';
 import InhouseService from "./InhouseService";
+import * as NodeCache from 'node-cache';
 
 export default class OutputService {
+  static matchCache = new NodeCache();
+  static profileCache = new NodeCache();
+  static leagueCache = new NodeCache();
+
   static client: Client;
   static globalInhouseInfo;
 
@@ -41,6 +46,11 @@ export default class OutputService {
 
   /** Formats a match into discord embed form */
   public static async outputMatch(match): Promise<Object> {
+    let cachedOutput = this.matchCache.get(match.matchid);
+    if(cachedOutput) {
+      return cachedOutput;
+    }
+
     // See who won
     const blueTeamWin: boolean = match.winning_team === 100;
 
@@ -130,6 +140,7 @@ export default class OutputService {
       ]
     };
 
+    this.matchCache.set(match.matchid, embed, 24 * 60 * 60);
     return embed;
   }
 
@@ -139,9 +150,16 @@ export default class OutputService {
     const user: User = this.client.users.get(userid);
     const globalInhouseInfo = await InfoService.getGlobalInhouseInfo();
 
-    // Get match statistics (first of aggregate data averaged, then of most recent 3 games)
-    const statistics = await StatisticsService.getInhouseProfileStatisticsByUserId(userid, guildid);
+    let cacheProfile: any = this.profileCache.get(userid);
+    if(cacheProfile && cacheProfile.player.leagueid == profile.leagueid && cacheProfile.player.elo == profile.elo) {
+      return cacheProfile.embed;
+    }
+
+    // Get information from the latest three games
     const recentMatches = await StatisticsService.getRecentMatchDataByUserId(userid, guildid);
+
+    // Get aggregate statistics
+    const statistics = await StatisticsService.getInhouseProfileStatisticsByUserId(userid, guildid);
 
     // Create the output for the aggregate data
     let statsOutput: string = "";
@@ -221,6 +239,7 @@ export default class OutputService {
       ]
     };
 
+    this.profileCache.set(userid, { player: profile, embed: embed }, 60 * 60);
     return embed;
   }
 
@@ -371,7 +390,7 @@ export default class OutputService {
       let teamText = match.winning_team == 100 ? "Blue Team" : "Red Team";
 
       idList.push("**" + match.matchid + "**");
-      winnerList.push(teamEmoji + match.winning_team);
+      winnerList.push(teamEmoji + teamText);
       dateList.push((new Date(match.date)).toLocaleDateString());
     });
 

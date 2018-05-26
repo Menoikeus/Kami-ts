@@ -37,7 +37,6 @@ export class Bot {
     }).then(() => {
       setTimeout(() => {
         this.setupGuilds();
-        MatchService.setupMatchService(this.client);
         OutputService.setupOutputService(this.client);
       }, 2000);
     });

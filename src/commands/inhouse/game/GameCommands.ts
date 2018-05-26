@@ -63,7 +63,7 @@ export class ShowMatch extends Command {
       throw new Error("You need to give me a match id, or the word 'recent'");
     }
     else if(args[0] === "recent") {
-      match = (await InhouseService.getInhouseMatchesCollection(guildid).find().limit(1).sort({$natural:-1}).toArray())[0];
+      match = (await InhouseService.getInhouseMatchesCollection(guildid).find().limit(1).sort({date:-1}).toArray())[0];
       if(!match) {
         throw new Error("There aren't any matches in the league.");
       }
@@ -94,11 +94,12 @@ export class ShowMatches extends Command {
     if(pageNumber < 1) throw new Error("The page number should be a number greater than or equal to 1!");
 
     // Get 3 matches on the specified page
-    const matchesPerPage: number = 3;
+    const matchesPerPage: number = 5;
     const guildid: string = message.guild.id;
     let matches = await InhouseService.getInhouseMatchesCollection(guildid)
       .find({ completed: true })
       .limit(matchesPerPage)
+      .sort({ date: -1 })
       .skip(matchesPerPage * (pageNumber - 1))
       .toArray();
 
