@@ -6,9 +6,16 @@ export class MongoDatabaseProvider {
   public static connectToDatabase(user: string, password: string, databaseUrl: string): Promise<MongoClient> {
     const uri = "mongodb://" + user + ":" + password + "@" + databaseUrl;
 
+    const options = {
+      keepAlive: 1,
+      connectTimeoutMS: 30000,
+      reconnectTries: 30,
+      reconnectInterval: 5000
+    }
+
     MongoDatabaseProvider.close();
     return new Promise((resolve, reject) => {
-      MongoClient.connect(uri, function(error, client) {
+      MongoClient.connect(uri, options, function(error, client) {
         if(error) {
           reject(new Error("Database connection failed"));
         }
