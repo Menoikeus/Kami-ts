@@ -68,3 +68,12 @@ data/test/
 !package.json
 !tsconfig.json
 !nodemon.json
+
+# icons
+icons/
+
+# stuff
+experimentation/
+
+# ssh connector
+connect.sh
