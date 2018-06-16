@@ -87,7 +87,7 @@ export default class MatchService {
     the match on the database
   */
   public static async checkMatch(match, finishedMatch, inhouseInfo, guildid: string): Promise<String> {
-    let matchid = match.id
+    let matchid: string = match.matchid
 
     // Go through all the inhouse players in the match and create a hashmap linking
     // leagueid to the player
