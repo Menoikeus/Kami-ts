@@ -25,7 +25,11 @@ export default class MatchService {
 
   public static async startMatchWatcher(client: Client, guildid: string) {
     console.log("Created watcher for guild " + guildid);
+
+    // Represents the time (in minutes) between checking the game statuses for each guild
     const minutesBetweenChecks: number = 3;
+
+    // Every 3rd minute, we're gonna go through all the incomplete matches for the guild
     let minSinceCheck: number = Math.floor(Math.random() * minutesBetweenChecks);
     schedule.scheduleJob(Math.floor(Math.random() * 60) + ' * * * * *', async function() {
       if(minSinceCheck + 1 >= 3) {
@@ -35,15 +39,40 @@ export default class MatchService {
         let ongoingMatches = await InhouseService.getInhouseMatchesCollection(guildid).find({ completed: false }).toArray();
         let inhouseInfo = ongoingMatches.length == 0 ? {} : await InfoService.getInhouseInfo(guildid);
 
+        // Iterate through the unfinished matches for the guild
         ongoingMatches.forEach(async function(match) {
-          let message = await MatchService.checkMatch(match, inhouseInfo, guildid);
+          // Get the text channel that the match was started in
           let channel: TextChannel = <TextChannel>client.guilds.get(guildid).channels.get(match.channelid);
-          channel.send(message);
+          let matchid: string = match.matchid;
 
-          let completedMatch = await InhouseService.getInhouseMatchByMatchId(match.matchid, guildid);
-          if(completedMatch && completedMatch.completed) {
-            let output = await OutputService.outputMatch(completedMatch);
-            channel.send({ embed: output });
+          // See if the match is completed. If the match never completed, delete
+          // the match from the database
+          let finishedMatch;
+          try {
+            finishedMatch = await MatchService.getMatchStatus(matchid, match.participants[0].summonerId);
+          }
+          catch(error) {
+            // Delete the match from the database
+            await InhouseService.getInhouseMatchesCollection(guildid).deleteOne({ matchid: matchid });
+            // If the match ended prematurely, send a message
+            if(error.statusCode && error.statusCode === 404) {
+              channel.send(error.message);
+            }
+            throw error;
+          }
+
+          // If the match is finished and we have a copy of the match
+          if(finishedMatch) {
+            // Run the match finishing code
+            let message = await MatchService.checkMatch(match, finishedMatch, inhouseInfo, guildid);
+            channel.send(message);
+
+            // Output the match
+            let completedMatch = await InhouseService.getInhouseMatchByMatchId(match.matchid, guildid);
+            if(completedMatch && completedMatch.completed) {
+              let output = await OutputService.outputMatch(completedMatch);
+              channel.send({ embed: output });
+            }
           }
         });
       }
@@ -53,27 +82,23 @@ export default class MatchService {
     });
   }
 
-  public static async checkMatch(match, inhouseInfo, guildid: string): Promise<String> {
-    let matchid: string = match.matchid;
-    let finishedMatch;
+  /**
+    Takes in the finished match and the match stored in the database, and completes
+    the match on the database
+  */
+  public static async checkMatch(match, finishedMatch, inhouseInfo, guildid: string): Promise<String> {
+    let matchid = match.id
 
-    try {
-      finishedMatch = await MatchService.getMatchStatus(matchid, match.participants[0].summonerId);
-    }
-    catch(error) {
-      if(error.statusCode && error.statusCode === 404) {
-        await InhouseService.getInhouseMatchesCollection(guildid).deleteOne({ matchid: matchid });
-        return error.message;
-      }
-      throw error;
-    }
-
+    // Go through all the inhouse players in the match and create a hashmap linking
+    // leagueid to the player
     let inhousePlayers = await InhouseService.getAllInhousePlayersInMatch(match, guildid);
     let inhousePlayerMap = {};
     for(let i in inhousePlayers) {
       inhousePlayerMap[inhousePlayers[i].leagueid] = inhousePlayers[i];
     }
 
+    // Go through all the participants in the finished match data and the stored
+    // match data, and linked each player with their respective inhouse profile
     let finalParticipants = [];
     finishedMatch.participants.forEach(finishedParticipant => {
       match.participants.forEach(matchParticipant => {
@@ -82,10 +107,13 @@ export default class MatchService {
 
         if(finishedParticipant.teamId == teamid && finishedParticipant.championId == championid) {
           if(inhousePlayerMap[matchParticipant.summonerId]) {
-            finishedParticipant.userid = inhousePlayerMap[matchParticipant.summonerId].userid,
+            finishedParticipant.userid = inhousePlayerMap[matchParticipant.summonerId].userid;
             finishedParticipant.summonerId = inhousePlayerMap[matchParticipant.summonerId].leagueid;
+            finishedParticipant.elo = inhousePlayerMap[matchParticipant.summonerId].elo;
           }
-          finishedParticipant.elo = inhouseInfo.i_default_elo;
+          else {
+            finishedParticipant.elo = inhouseInfo.i_default_elo;
+          }
           finalParticipants.push(finishedParticipant);
         }
       });
