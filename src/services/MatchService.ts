@@ -36,6 +36,7 @@ export default class MatchService {
         minSinceCheck = 0;
         console.log("Checking game status for guild " + guildid);
 
+        // Find all unfinished inhouse matches and the guild's inhouse settings
         let ongoingMatches = await InhouseService.getInhouseMatchesCollection(guildid).find({ completed: false }).toArray();
         let inhouseInfo = ongoingMatches.length == 0 ? {} : await InfoService.getInhouseInfo(guildid);
 

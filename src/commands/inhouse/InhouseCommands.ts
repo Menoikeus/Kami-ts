@@ -22,15 +22,36 @@ export class AddSummoner extends Command {
   }
 }
 
+export class ReassignSummoner extends Command {
+  constructor() {
+    super(["inhouse", "reassign"]);
+  };
+
+  public async run(client: Client, message: Message, args: string[]) {
+    // Check for a valid argument
+    if(args.length != 1) throw new Error("You should only provide me your " +
+      "summoner name! If there's a space, wrap it in quotes!");
+    if(args[0].trim().length == 0) throw new Error("I need a summoner name to assign to your account!");
+
+    const userid = message.member.id;
+    const guildid = message.guild.id;
+    const summonerName = args[0].trim();
+
+    await InhouseService.updateSummonerForProfile(client, summonerName, userid, guildid);
+    message.channel.send("Your profile has been successfully reassigned to summoner " + summonerName);
+
+    // const result = await InhouseService.updateSummonerForProfile(args[0], userid, guildid);
+    // Create and assign summoner to account
+    // message.channel.send(result);
+  }
+}
+
 export class ShowLeague extends Command {
   constructor() {
     super(["inhouse", "league"]);
   };
 
   public async run(client: Client, message: Message, args: string[]) {
-    // Check for a valid argument
-    if(args.length !== 0) throw new Error("This command doesn't take any arguments!");
-
     // Create and assign summoner to account
     const result = await OutputService.outputLeagueInformation(message.guild.id);
     message.channel.send({ embed: result });
@@ -44,7 +65,7 @@ export class InhouseHelp extends Command {
 
   public async run(client: Client, message: Message, args: string[]) {
     // Check for a valid argument
-    if(args.length !== 0) throw new Error("This command doesn't take any arguments!");
+    if(args.length !== 0) return;
 
     class Command {
       caller: string;
