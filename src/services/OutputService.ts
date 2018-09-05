@@ -211,7 +211,7 @@ export default class OutputService {
       "author": {
         "name": user.username + "#" + user.discriminator,
         "icon_url": playerAvatarUrl,
-        "url": "http://www.lolking.net/summoner/na/" + profile.leagueid
+        "url": "http://na.op.gg/summoner/userName=" + profile.summonerName.replace(/ /g, '+')
       },
       "thumbnail": {
         "url": imageUrl,
