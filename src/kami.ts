@@ -12,4 +12,5 @@ let bot: Bot = new Bot(kamiConfig.token);
 function cleanup(): void {
   MongoDatabaseProvider.close();
   console.log("Connection with database closed");
+  process.exit();
 }

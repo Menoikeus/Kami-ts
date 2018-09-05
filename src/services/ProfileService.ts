@@ -29,10 +29,11 @@ export default class ProfileService {
     return db.db(guildid).collection("users");
   }
 
-  public static async createProfileInServer(userid: string, guildid: string) {
+  public static async createProfileInServer(username: string, userid: string, guildid: string) {
     let userObj = {
       "userid"		: String(userid),
-  		"level"			: Number(0),
+      "username"  : String(username),
+      "level"			: Number(0),
   		"exp"				: Number(0)
     }
 

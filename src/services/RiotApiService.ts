@@ -14,6 +14,15 @@ export default class RiotApiService {
     }
   }
 
+  public static async getSummonerByLeagueId(leagueid: number) {
+    try {
+      return await RiotApiService.lolapi.Summoner.gettingById(leagueid);
+    }
+    catch(error) {
+      RiotApiService.catchSummonerError(error);
+    }
+  }
+
   private static catchSummonerError(error) {
     switch(error.statusCode) {
       case 400: throw new RiotApiError("I don't know why, but something broke.", error.statusCode);

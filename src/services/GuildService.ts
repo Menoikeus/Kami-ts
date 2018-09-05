@@ -47,10 +47,11 @@ export default class GuildService {
 
   private static addMembersToServer(guild: Guild): void {
     guild.members.forEach((member: GuildMember) => {
+      let username: string = member.user.username;
       let userid: string = member.user.id;
       let guildid: string = member.guild.id;
 
-      ProfileService.createProfileInServer(userid, guildid);
+      ProfileService.createProfileInServer(username, userid, guildid);
     });
   }
 }

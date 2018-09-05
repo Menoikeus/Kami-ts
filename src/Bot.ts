@@ -76,7 +76,7 @@ export class Bot {
     });
 
     this.client.on("guildCreate", (guild: Guild) => { GuildService.addGuildToDatabase(guild); this.createWatcher(guild.id); });
-    this.client.on("guildMemberAdd", (member: GuildMember) => ProfileService.createProfileInServer(member.user.id, member.guild.id));
+    this.client.on("guildMemberAdd", (member: GuildMember) => ProfileService.createProfileInServer(member.user.username, member.user.id, member.guild.id));
   }
 
   private createWatcher(guildid: string): void {

@@ -57,13 +57,13 @@ export default class InhouseService {
       else {
         await InhouseService.getInhouseProfileCollection(guildid).update(
           { userid: String(userid) },
-          { $set: { leagueid: String(summoner.id) } }
+          { $set: { leagueid: String(summoner.id), summonerName: String(summoner.name) } }
         );
         return "I've successfully linked your account with summoner " + summoner.name;
       }
     }
     else {
-      const profile = await InhouseService.addNewProfile(userid, guildid, leagueid);
+      const profile = await InhouseService.addNewProfile(summonerName, userid, guildid, leagueid);
       return "I've successfully created your account with summoner " + summoner.name + " and elo " + profile.elo;
     }
   }
@@ -82,16 +82,17 @@ export default class InhouseService {
     const user = await InhouseService.getInhouseProfileByDiscordId(userid, guildid);
     if(user) throw new Error("You already have an inhouse profile!");
 
-    const profile = await InhouseService.addNewProfile(userid, guildid, leagueid);
+    const profile = await InhouseService.addNewProfile(summonerName, userid, guildid, leagueid);
     return "I've successfully created your account with summoner " + summoner.name + " and elo " + profile.elo;
   }
 
   /** Adds a new profile to the inhouse players collection. Returns the info inserted. **/
-  private static async addNewProfile(userid: string, guildid: string, leagueid: string) {
+  private static async addNewProfile(summonerName: string, userid: string, guildid: string, leagueid: string) {
     const inhouse_info = await InfoService.getInhouseInfo(guildid);
     const info = {
       "userid"	    : String(userid),
       "leagueid"    : String(leagueid),
+      "summonerName": String(summonerName),
       "elo"         : inhouse_info.i_default_elo,
     }
 
@@ -120,6 +121,18 @@ export default class InhouseService {
     return "I've successfully linked your account with summoner " + summoner.name;
   }
 
+  // Updates summoner name
+  public static async updateSummonerNameByDiscordId(userid: string, guildid: string): Promise<string> {
+    const profile = await InhouseService.getInhouseProfileByDiscordId(userid, guildid);
+    const summoner = await RiotApiService.getSummonerByLeagueId(profile.leagueid);
+
+    if(profile.summonerName != summoner.name) {
+      await InhouseService.getInhouseProfileCollection(guildid).update(
+        { userid: String(userid) },
+        { $set: { summonerName: String(summoner.name) } }
+      );
+    }
+    return summoner.name;
   }
 
   /** Gets all the inhouse players who are currently in this game */

@@ -3,6 +3,7 @@ import { MongoClient, Collection } from 'mongodb';
 import { MongoDatabaseProvider } from './MongoDBService';
 import InfoService from './InfoService';
 import StatisticsService from './StatisticsService';
+import RiotApiService from './RiotApiService';
 import InhouseService from "./InhouseService";
 import * as NodeCache from 'node-cache';
 
@@ -155,6 +156,9 @@ export default class OutputService {
       return cacheProfile.embed;
     }
 
+    // Update summoner name if needed
+    profile.summonerName = await InhouseService.updateSummonerNameByDiscordId(userid, guildid);
+
     // Get information from the latest three games
     const recentMatches = await StatisticsService.getRecentMatchDataByUserId(userid, guildid);
 
@@ -214,8 +218,8 @@ export default class OutputService {
       },
       "fields": [
         {
-          "name": "Discord ID",
-          "value": profile.userid
+          "name": "Summoner Name",
+          "value": profile.summonerName
         },
         {
           "name": "League ID",

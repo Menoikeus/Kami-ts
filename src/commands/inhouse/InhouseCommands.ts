@@ -29,7 +29,9 @@ export class ReassignSummoner extends Command {
 
   public async run(client: Client, message: Message, args: string[]) {
     // Check for a valid argument
-    if(args.length != 1) throw new Error("You should only provide me your " +
+    if(args.length === 0) throw new Error("You need to provide me your " +
+      "summoner name! If there's a space, wrap it in quotes!");
+    if(args.length !== 1) throw new Error("You should only provide me your " +
       "summoner name! If there's a space, wrap it in quotes!");
     if(args[0].trim().length == 0) throw new Error("I need a summoner name to assign to your account!");
 
