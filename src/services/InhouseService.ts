@@ -39,6 +39,13 @@ export default class InhouseService {
     return db.db(guildid).collection("inhouse_players");
   }
 
+  /** Gets the watchlist collection */
+  public static getInhouseWatchlistCollection(guildid: string) {
+    let db: MongoClient = MongoDatabaseProvider.getDatabase();
+
+    return db.db(guildid).collection("inhouse_watchlist");
+  }
+
   public static async updateInhouseProfile(userid: string, guildid: string, summonerName: string): Promise<string> {
     const summoner = await RiotApiService.getSummonerByName(summonerName);
     const leagueid: string = summoner.id;

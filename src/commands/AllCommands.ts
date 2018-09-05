@@ -2,7 +2,7 @@ import { CommandList, Command } from '../services/CommandService';
 import { GenerateTeam, GenerateRankedTeam, RollDice } from './GeneralCommands';
 import { GetProfile } from './inhouse/ProfileCommands';
 import { GetLeague } from './inhouse/LeagueCommands';
-import { AddSummoner, ShowLeague, InhouseHelp, ReassignSummoner } from './inhouse/InhouseCommands';
+import { AddSummoner, ShowLeague, InhouseHelp, ReassignSummoner, Watch } from './inhouse/InhouseCommands';
 import { StartMatch, ShowMatch, ShowMatches } from './inhouse/game/GameCommands';
 
 
@@ -23,5 +23,6 @@ export default class AllCommands implements CommandList {
     this.commands.push(new ShowLeague());
     this.commands.push(new InhouseHelp());
     this.commands.push(new ReassignSummoner());
+    this.commands.push(new Watch());
   }
 };

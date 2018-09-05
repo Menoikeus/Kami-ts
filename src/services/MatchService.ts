@@ -83,6 +83,15 @@ export default class MatchService {
     });
   }
 
+  public static async startPlayerWatcher() {
+
+  }
+
+  // Adds the player to the watchlist, so that their games are automatically recorded
+  public static async addPlayerToWatchlist(userid: string, guildid: string) {
+    await InhouseService.getInhouseWatchlistCollection(guildid).update({ userid: userid }, { userid: userid }, { upsert: true });
+  }
+
   /**
     Takes in the finished match and the match stored in the database, and completes
     the match on the database

@@ -116,3 +116,23 @@ export class InhouseHelp extends Command {
     message.channel.send(output);
   }
 }
+
+export class Watch extends Command {
+  constructor() {
+    super(["inhouse", "game", "watch"]);
+  };
+
+  public async run(client: Client, message: Message, args: string[]) {
+    console.log();
+
+    const gameInstance = message.member.user.presence.game;
+    console.log(gameInstance);
+    if(gameInstance && gameInstance.details.includes('Summoner\'s Rift (Custom)')) {
+      console.log("Ayy");
+    }
+    else {
+      "awww";
+    }
+
+  }
+}
