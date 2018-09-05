@@ -111,6 +111,15 @@ export default class InhouseService {
     // See if anyone else has this summoner added
     const existingPlayerWithSummoner = await InhouseService.getInhouseProfileByLeagueId(summoner.id, guildid);
     if(existingPlayerWithSummoner) throw new Error(client.users.get(existingPlayerWithSummoner.userid).username + " already has that summoner linked!");
+
+    // Otherwise change their summoner
+    await InhouseService.getInhouseProfileCollection(guildid).update(
+      { userid: String(userid) },
+      { $set: { leagueid: String(summoner.id), summonerName: String(summoner.name) } }
+    );
+    return "I've successfully linked your account with summoner " + summoner.name;
+  }
+
   }
 
   /** Gets all the inhouse players who are currently in this game */

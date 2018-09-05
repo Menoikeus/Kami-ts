@@ -10,7 +10,8 @@ export default class VariableService {
   public static getValueForVariable(variableName: string, guildid: string) {
     let db: MongoClient = MongoDatabaseProvider.getDatabase();
 
+    /*
     return db.db(guildid).collection("inhouse_players")
-      .findOne({ userid: String(userid) });
+      .findOne({ userid: String(userid) });*/
   }
 }
