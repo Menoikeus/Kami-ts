@@ -37,6 +37,12 @@ export class StartMatch extends Command {
                       " Please link your accounts with summoners using !inhouse add USERNAME.");
     }
 
+    // See if the teams are balanced enough
+    let team100 = 0;
+    let team200 = 0;
+    game.participants.map((p) => { p.teamId == 100 ? team100++ : team200++  });
+    if(Math.abs(team100 - team200) > (inhouseInfo.i_max_imbalance || 1)) {
+      throw new Error("Your game is currently too imbalanced. Balance the game or change the server's max imbalance value");
     }
 
     await MatchService.insertUnfinishedMatchIntoDatabase(game, guildid, message.channel.id);

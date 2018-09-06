@@ -133,6 +133,11 @@ export default class MatchService {
             const inhouseInfo = await InfoService.getInhouseInfo(guildid);
             if(inhousePlayers.length < inhouseInfo.i_minimum_players) continue;
 
+            // See if the teams are balanced enough
+            let team100 = 0;
+            let team200 = 0;
+            game.participants.map((p) => { p.teamId == 100 ? team100++ : team200++  });
+            if(Math.abs(team100 - team200) > (inhouseInfo.i_max_imbalance || 1)) continue; 
 
             // Insert the match
             await MatchService.insertUnfinishedMatchIntoDatabase(game, guildid, profile.channelid);
