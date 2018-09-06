@@ -81,5 +81,6 @@ export class Bot {
 
   private createWatcher(guildid: string): void {
     MatchService.startMatchWatcher(this.client, guildid);
+    MatchService.startPlayerWatcher(this.client, guildid);
   }
 }

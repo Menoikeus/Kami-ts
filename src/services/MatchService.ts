@@ -1,5 +1,5 @@
 import Tree from "../data_structures/Tree";
-import { Message, TextChannel, Client, GuildMember } from "discord.js";
+import { Message, TextChannel, Client, GuildMember, User } from "discord.js";
 import { MongoClient, Collection } from 'mongodb';
 import { MongoDatabaseProvider } from './MongoDBService';
 import RiotApiService from "./RiotApiService";
@@ -83,13 +83,89 @@ export default class MatchService {
     });
   }
 
-  public static async startPlayerWatcher() {
+  public static async startPlayerWatcher(client: Client, guildid: string) {
+    console.log("Created watchlist watcher for guild " + guildid);
+    // Represents the time (in minutes) between checking for a game for each player
+    const minutesBetweenChecks: number = 5;
 
+    // Every 5th minute, check to see if any of the players on the watchlist are in a game
+    let minSinceCheck: number = Math.floor(Math.random() * minutesBetweenChecks);
+    schedule.scheduleJob(Math.floor(Math.random() * 60) + ' * * * * *', async function() {
+      if(minSinceCheck + 1 >= minutesBetweenChecks) {
+        minSinceCheck = 0;
+
+        let watchlist = await InhouseService.getInhouseWatchlistCollection(guildid).find({}).toArray();
+        let checked: Array<string> = [];
+        // Iterate through the watchlist
+        for(let profile of watchlist) {
+          const userid = profile.userid
+          if(checked.indexOf(userid) !== -1) continue;
+
+          const discordUser = client.users.get(userid);
+          const gameInstance = discordUser.presence.game;
+
+          if(gameInstance && gameInstance.details && gameInstance.details.includes('Summoner\'s Rift (Custom)')) {
+            console.log("Checking for inhouse match for user " + userid + " in guild " + guildid);
+            // Get the summoner's game
+            let game;
+            try {
+              game = await RiotApiService.getCurrentGameByUserId(userid, guildid);
+            }
+            catch(err) {
+              // If the game hasn't started yet
+              continue;
+            }
+            console.log("Game found");
+
+            // Get all the players in the game
+            const inhousePlayers: Array<Object> = await InhouseService.getAllInhousePlayersInMatch(game, guildid);
+
+            // Remove players from this round of match checking (since we don't want to double check) by adding
+            // to the checked players list
+            const inhousePlayerUserIds: Array<string> = inhousePlayers.map((p: any) => { return p.userid });
+            checked.concat(inhousePlayerUserIds);
+
+            // Check if we're watching the game already
+            let existingGame = await InhouseService.getInhouseMatchByMatchId(game.gameId, guildid);
+            if(existingGame) continue;
+
+            // See if there are enough inhouse players to qualify
+            const inhouseInfo = await InfoService.getInhouseInfo(guildid);
+            if(inhousePlayers.length < inhouseInfo.i_minimum_players) continue;
+
+
+            // Insert the match
+            await MatchService.insertUnfinishedMatchIntoDatabase(game, guildid, profile.channelid);
+
+            // Send a message confirming match start
+            let players: Array<String> = [];
+            inhousePlayers.forEach((player: any) => {
+              let user: User = client.users.get(player.userid);
+              players.push(user.username);
+            });
+
+            let channel: TextChannel = <TextChannel>client.guilds.get(guildid).channels.get(profile.channelid);
+            channel.send(players.join(", ") + " " + (players.length === 1 ? "has" : "have") + " started a match with id " + game.gameId)
+          }
+        }
+
+      }
+      else {
+        minSinceCheck += 1;
+      }
+    });
   }
 
   // Adds the player to the watchlist, so that their games are automatically recorded
-  public static async addPlayerToWatchlist(userid: string, guildid: string) {
-    await InhouseService.getInhouseWatchlistCollection(guildid).update({ userid: userid }, { userid: userid }, { upsert: true });
+  public static async addPlayerToWatchlist(channelid: string, userid: string, guildid: string) {
+    let profile = await InhouseService.getInhouseProfileByDiscordId(userid, guildid);
+    if(!profile) throw new Error("You don't have an inhouse profile yet! Add yourself with !inhouse add SUMMONERNAME.");
+
+    await InhouseService.getInhouseWatchlistCollection(guildid).update({ userid: userid }, { userid: userid, channelid: channelid }, { upsert: true });
+  }
+
+  public static async removePlayerFromWatchlist(userid: string, guildid: string) {
+    await InhouseService.getInhouseWatchlistCollection(guildid).remove({ userid: userid });
   }
 
   /**

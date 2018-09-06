@@ -34,7 +34,9 @@ export class StartMatch extends Command {
     if(inhousePlayers.length < inhouseInfo.i_minimum_players) {
       throw new Error("An inhouse game must have at least " + inhouseInfo.i_minimum_players +
                       " players in the inhouse league to be valid!" +
-                      " Please link your accounts with summoners using !inhouse add $USERNAME");
+                      " Please link your accounts with summoners using !inhouse add USERNAME.");
+    }
+
     }
 
     await MatchService.insertUnfinishedMatchIntoDatabase(game, guildid, message.channel.id);
