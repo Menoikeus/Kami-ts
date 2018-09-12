@@ -110,7 +110,7 @@ export class InhouseHelp extends Command {
     });
     basicCommands.push({
         caller: "!inhouse watch",
-        description: "Makes it so Kami watches and records any *valid* inhouse match that you're in automatically (without having to call !inhouse start). Only works if your game activity is set to 'shown'."
+        description: "Makes it so Kami watches and records any *valid* inhouse match that you're in automatically (without having to call !inhouse start). Only works if your game activity is set to 'shown' in Discord."
     });
     basicCommands.push({
         caller: "!inhouse unwatch",
