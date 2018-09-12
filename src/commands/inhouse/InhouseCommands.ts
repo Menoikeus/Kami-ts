@@ -4,6 +4,7 @@ import InhouseService from '../../services/InhouseService';
 import RiotApiService from '../../services/RiotApiService';
 import InfoService from '../../services/InfoService';
 import OutputService from '../../services/OutputService';
+import MatchService from '../../services/MatchService';
 
 export class AddSummoner extends Command {
   constructor() {
@@ -86,11 +87,11 @@ export class InhouseHelp extends Command {
       description: "Shows the info about this server's inhouse league."
     });
     basicCommands.push({
-      caller: "!inhouse add $SUMMONER",
+      caller: "!inhouse add SUMMONER",
       description: "Creates an inhouse profile on this server, tied to the specified summoner."
     });
     basicCommands.push({
-      caller: "!inhouse profile [$DISCORD_USERNAME]",
+      caller: "!inhouse profile [DISCORD_USERNAME]",
       description: "Views your inhouse profile, or the specified discord user's profile."
     });
 
@@ -100,11 +101,11 @@ export class InhouseHelp extends Command {
     });
 
     basicCommands.push({
-      caller: "!inhouse game [$MATCHID | \"recent\"]",
+      caller: "!inhouse game [MATCHID | \"recent\"]",
       description: "Shows the game sats for the game with the given match id, or the most recent game."
     });
     basicCommands.push({
-      caller: "!inhouse games [$PAGE_NUMBER]",
+      caller: "!inhouse games [PAGE_NUMBER]",
       description: "Shows the most recent 5 games. Specify a page number (starting from 1) to get later games."
     });
 
@@ -114,5 +115,27 @@ export class InhouseHelp extends Command {
     });
 
     message.channel.send(output);
+  }
+}
+
+export class Watch extends Command {
+  constructor() {
+    super(["inhouse", "watch"]);
+  };
+
+  public async run(client: Client, message: Message, args: string[]) {
+    await MatchService.addPlayerToWatchlist(message.channel.id, message.member.id, message.guild.id);
+    message.channel.send("Your games are now being watched!");
+  }
+}
+
+export class Unwatch extends Command {
+  constructor() {
+    super(["inhouse", "unwatch"]);
+  };
+
+  public async run(client: Client, message: Message, args: string[]) {
+    await MatchService.removePlayerFromWatchlist(message.member.id, message.guild.id);
+    message.channel.send("Your games are no longer being watched.");
   }
 }

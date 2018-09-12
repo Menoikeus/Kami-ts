@@ -28,7 +28,8 @@ export default class GuildService {
 			info_type          	  : "inhouse_info",
 			start_date 						: (new Date()).getTime(),
 			i_volatility_constant : Number(400),
-			i_minimum_players     : Number(1),
+			i_minimum_players     : Number(4),
+      i_max_imbalance       : Number(1),
 			i_default_elo         : Number(2500),
 			b_anyone_can_reassign : false,
 			b_same_starting_rank  : true
