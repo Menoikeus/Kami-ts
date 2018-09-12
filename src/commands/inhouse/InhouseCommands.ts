@@ -64,8 +64,8 @@ export class InhouseHelp extends Command {
 
   public async run(client: Client, message: Message, args: string[]) {
     // Check for a valid argument
-    if(args.length !== 0) return;
-
+    if(args.length !== 0 && !args[0].includes("help")) return;
+    
     class Command {
       caller: string;
       description: string;
