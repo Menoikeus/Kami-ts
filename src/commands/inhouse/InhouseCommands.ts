@@ -42,10 +42,6 @@ export class ReassignSummoner extends Command {
 
     await InhouseService.updateSummonerForProfile(client, summonerName, userid, guildid);
     message.channel.send("Your profile has been successfully reassigned to summoner " + summonerName);
-
-    // const result = await InhouseService.updateSummonerForProfile(args[0], userid, guildid);
-    // Create and assign summoner to account
-    // message.channel.send(result);
   }
 }
 
@@ -91,7 +87,11 @@ export class InhouseHelp extends Command {
       description: "Creates an inhouse profile on this server, tied to the specified summoner."
     });
     basicCommands.push({
-      caller: "!inhouse profile [DISCORD_USERNAME]",
+        caller: "!inhouse reassign SUMMONER",
+        description: "Links your inhouse profile to a different summoner, if you already have an inhouse profile."
+    });
+    basicCommands.push({
+      caller: "!inhouse profile DISCORD_USERNAME",
       description: "Views your inhouse profile, or the specified discord user's profile."
     });
 
@@ -105,8 +105,16 @@ export class InhouseHelp extends Command {
       description: "Shows the game sats for the game with the given match id, or the most recent game."
     });
     basicCommands.push({
-      caller: "!inhouse games [PAGE_NUMBER]",
+      caller: "!inhouse games PAGE_NUMBER",
       description: "Shows the most recent 5 games. Specify a page number (starting from 1) to get later games."
+    });
+    basicCommands.push({
+        caller: "!inhouse watch",
+        description: "Makes it so Kami watches and records any *valid* inhouse match that you're in automatically (without having to call !inhouse start). Only works if your game activity is set to 'shown'."
+    });
+    basicCommands.push({
+        caller: "!inhouse unwatch",
+        description: "Undoes !inhouse watch, so that your inhouse games are no longer automatically recorded."
     });
 
     let output: string = "";
