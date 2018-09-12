@@ -54,6 +54,9 @@ export class CommandHandler {
     let regex: RegExp = new RegExp("^" + prefix);
     let content: string = message.content.replace(regex, "");
 
+    // Replace left and right quotes
+    content = content.replace("“", "\"");
+    content = content.replace("”", "\"");
     // Check for mismatched quotes
     if((content.match(/\"/g) || []).length % 2 !== 0) {
       throw new Error("Mismatched quotes!");
