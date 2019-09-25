@@ -34,7 +34,8 @@ A list of commands is here:
 <b>k!inhouse games PAGE_NUMBER:</b>
  Shows the most recent 5 games. Specify a page number (starting from 1) to get later games.
 <b>k!inhouse watch:</b>
- Makes it so Kami watches and records any valid inhouse match that you're in automatically (without having to call !inhouse start). Only works if your game activity is set to 'shown' in Discord.
+ Makes it so Kami watches and records any valid inhouse match that you're in automatically 
+ (without having to call !inhouse start). Only works if your game activity is set to 'shown' in Discord.
 <b>k!inhouse unwatch:</b>
  Undoes !inhouse watch, so that your inhouse games are no longer automatically recorded.
 </code></pre>
